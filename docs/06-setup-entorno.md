@@ -5,9 +5,15 @@ ya funciona en `almacenero` (ver su Doc 3 para los problemas conocidos, sobre to
 descargas que se cortan). El stack es el mismo, así que el entorno de una sirve para
 la otra.
 
-Plataforma documentada: **macOS en Apple Silicon con Homebrew**. Si la otra
-computadora es Windows o Linux, hay que adaptar este documento antes de usarlo
-(pendiente: confirmar sistema operativo y chip).
+Máquinas (D41):
+
+| Máquina | Uso | Sistema |
+|---------|-----|---------|
+| Mac actual | Desarrollo | macOS, Apple Silicon |
+| Mac nueva (más potente) | **Desarrollo principal** desde la próxima sesión | macOS, Apple Silicon |
+| Windows (Intel i9) | Pruebas ocasionales | Windows, x86_64. **No puede compilar iOS** (requiere macOS y Xcode) |
+
+Las dos Mac siguen la guía de macOS; Windows tiene la suya más abajo.
 
 ## Versiones de referencia (máquina actual, 2026-11-18)
 
@@ -133,3 +139,35 @@ Cuando haya Makefile:
 - Credenciales: `gh auth login` y la clave de firma del APK cuando exista.
 - Las transcripciones de las sesiones no se mudan: el contexto vive en `CLAUDE.md` y
   `docs/`.
+
+## Windows (Intel i9): pruebas ocasionales
+
+**Sin verificar en esta máquina**: es una guía de partida que se completa y corrige en la
+primera instalación real (y lo aprendido va a `03-problemas-soluciones.md`).
+
+Qué se puede hacer en Windows: correr el backend y la base, compilar y probar las apps en
+**Android** (emulador o celular), y compilar la app **Negocio de escritorio** para
+Windows. Qué no: nada de iOS.
+
+Esquema recomendado:
+
+- **WSL2 con Ubuntu** para el backend, `make`, la CLI de Supabase y Docker (Docker Desktop
+  con el motor WSL2). Los targets del Makefile son de bash, así que corren ahí. **Clonar el
+  repo dentro del sistema de archivos de WSL** (no en `C:\`): es mucho más rápido.
+- **Flutter instalado en Windows** (no en WSL) para el emulador y para la app de
+  escritorio, con Android Studio o las herramientas de línea de comandos.
+  - El emulador debe usar la imagen **`x86_64`** (no la `arm64-v8a` de la Mac) con la
+    aceleración de Windows (Windows Hypervisor Platform) activada.
+  - Para compilar la app de escritorio hace falta **Visual Studio 2022** con la carga
+    "Desktop development with C++".
+- Si se quiere correr `make lint`, `make test` o `make apk` en WSL, instalar también una
+  copia de Flutter **dentro de WSL** (compila, pero no tiene emulador; se instala en un
+  celular por `adb` por Wi-Fi).
+- JDK 17, el mismo SDK de Android y las mismas versiones de herramientas que en la tabla de
+  arriba.
+- Git: el repo trae `.gitattributes` con finales de línea `LF` para que los scripts de
+  bash no se rompan.
+
+Herramientas (instalables con `winget`, a confirmar nombres de paquete en el momento):
+Git, GitHub CLI, Docker Desktop, JDK 17, Android Studio, Visual Studio 2022, y WSL
+(`wsl --install`).

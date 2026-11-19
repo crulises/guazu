@@ -12,7 +12,8 @@ cambian: revisar antes de decidir.
 | Supabase (Postgres, Auth, Storage) | Plan gratuito con límites, luego pago | Mensual | Desde el primer despliegue | por verificar |
 | Hosting del backend (Fly.io, Render, Railway) | Gratuito/bajo | Mensual | Al desplegar | por verificar |
 | Email transaccional (ej. Resend, Amazon SES, Brevo) | Plan gratuito con límites | Mensual | Avisos, comprobantes, mora (etapa 0.2 en adelante) | por verificar |
-| Dominio | Según registrador | Anual | Emails con tu dominio, enlaces | por verificar |
+| Dominio `crulises.dev` | Ya comprado | Anual | API (`guazu-api.crulises.dev`) y enlaces | pagado |
+| Fly.io (backend) | Pago por uso | Mensual | Pruebas cerradas (D35) | por verificar |
 | Mercado Pago, comisión de procesamiento | No publicada en la documentación para desarrolladores | Por transacción | Etapa 0.6; la paga el comercio | por verificar |
 | QR interoperable (Transferencias 3.0) | 6 a 8 por mil + IVA según el BCRA | Por transacción | Cobro por QR; lo paga el comercio | verificado (fuente BCRA, sin leer el reglamento) |
 | Contador (consulta) | Honorarios | Por consulta | Antes de la etapa 0.2 | — |

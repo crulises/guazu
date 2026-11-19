@@ -150,6 +150,9 @@ vigente del backend, no un valor cacheado largo).
 
 ## Principios de UX
 
+- **Lo repetitivo se hace en lote** (app Negocio): escanear en bucle, editar en grilla, actuar sobre una selección. Nunca entrar y salir de una pantalla mil veces.
+- Interfaz traducible desde el inicio (español de Argentina de base).
+
 - Móvil primero; pantallas con pulgar, no con mouse.
 - El escaneo es la acción central: rápida, con feedback inmediato.
 - Menos preguntas, más defaults. El comercio configura una vez y la app decide.

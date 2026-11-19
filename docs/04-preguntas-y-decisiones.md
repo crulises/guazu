@@ -49,6 +49,17 @@ pospuesto vive en `05-futuros-features.md`.
 | D29 | **Android primero, pero iOS-ready.** El código se escribe y compila también para iOS y se prueba en simulador. El pago de Apple (USD 99) se hace cuando el flujo esté probado. | No se quiere gastar antes de validar. Ver `06-setup-entorno.md`. |
 | D27 | **Mismo stack que almacenero**, con reglas de portabilidad (Doc 2 §Portabilidad). | Se confirmó condicionado a poder mudar de Supabase a Aurora o a una VPS. Es factible si se respetan las reglas. |
 | D30 | Ayuda dentro de la app con icono (nunca emojis) y documentación por app en `apps/<app>/docs/`. | Para poder enseñar cada flujo; tutoriales gráficos más adelante. Ver Doc 2 §Ayuda. |
+| D31 | **i18n desde el inicio**: solo la interfaz, con español de Argentina como base e inglés preparado. Los datos se muestran en el idioma en que se cargaron. | Es barato al principio y caro después. Ver Doc 2 §Idiomas. |
+| D32 | Dinero en **enteros en centavos** (`bigint`), cantidades en milésimas y porcentajes en puntos básicos. La API manda centavos y las apps formatean solo al mostrar. | Evita errores de redondeo. Ver Doc 2 §Dinero. |
+| D33 | En la app Negocio, toda tarea repetitiva tiene **modo en lote**: escaneo en bucle, edición en grilla, acciones sobre selección múltiple, importación de planilla. | Evitar entrar y salir de pantallas mil veces. Ver Doc 2 §Operaciones en lote. |
+| D34 | El negocio del escáner se **sugiere por ubicación** (polígono de cada sucursal), con QR del local y elección manual como respaldo. | La ubicación en interiores es imprecisa y requiere permiso. Ver Doc 2 §Cómo sabe el escáner de qué negocio es. |
+| D35 | Hosting de pruebas cerradas: **Supabase + Fly.io**, con dominio `crulises.dev`; API en `guazu-api.crulises.dev/v1`. Es provisorio: después se muda a un lugar permanente. | Por eso se insiste en la portabilidad. Ver Doc 2 §Portabilidad. |
+| D36 | QR interoperable y otros cobros: **a través de un proveedor de pagos** (Mercado Pago u otro), no directo. | Integrarlo directo exige ser aceptador o PSP. |
+| D37 | Catálogo: tabla global (SEPA + Open Food Facts de AR y vecinos) más una capa por negocio. Se reutilizan las decisiones del corte 7 de almacenero. | Ver Doc 7. |
+| D38 | Tráfico inicial del escáner: unas centenas de consultas por minuto. **Sin Redis**; se evalúa al escalar a muchos negocios. | Una búsqueda por EAN tarda unos milisegundos. |
+| D39 | Se hace un **ensayo de salida** de Supabase al tener una versión mínima viable, antes del primer cliente real. | Ver `revisar/ensayo-de-salida.md`. |
+| D40 | Proveedor de emails: **a decidir más adelante**. | Ver `revisar/proveedor-email.md`. |
+| D41 | Dos máquinas de desarrollo: Mac Apple Silicon (principal) y Windows con Intel i9 (pruebas ocasionales, sin iOS). | Ver Doc 6. |
 | D20 | Preferencias de notificaciones por usuario + inventario de qué notificación soporta cada versión. | Las push pueden ser invasivas: el usuario elige. |
 | D24 | Fotos: los metadatos (incluida la ubicación) se extraen **antes** de comprimir y se guardan aparte. | Evidencia de entregas; el volumen definirá cuánto rediseñar. |
 | D23 | Un adulto puede darle presupuesto a otro adulto. Los rubros se limitan solo si el responsable lo decide; el bloqueo de alcohol y tabaco es para menores. | Los grupos familiares ordenan el gasto; no se restringe a adultos. |
@@ -58,14 +69,8 @@ pospuesto vive en `05-futuros-features.md`.
 
 | # | Pregunta | Contexto | Estado |
 |---|----------|----------|--------|
-| Q28 | Sistema operativo y chip de la otra computadora. | El Doc 6 asume macOS con Apple Silicon. | Abierta |
 | Q27 | Condición fiscal: validar con contador. | Ver `validar-profesional/contador.md`. Antes de la etapa 0.2. | Abierta |
-| Q21 | Dinero en enteros (centavos) vs `numeric`. | Propongo enteros en centavos; cantidades con 3 decimales. | Propuesta |
-| Q22 | Hosting y costo mensual objetivo. | Hay que crear una nueva instancia de Supabase. | Abierta |
-| Q23 | Catálogo: una tabla global (Open Food Facts) con una capa por negocio encima. | Cada negocio pone su costo, margen y stock. | Propuesta |
-| Q10 | Cómo sabe el escáner a qué negocio pertenece. | Hoy hay uno solo; luego QR del local o selección. | Abierta |
 | Q12 | Fiado: valores iniciales de límite, recargo y plazo. | Propuestas en Doc 5. | Abierta |
-| Q25 | Tráfico esperado del escáner. | Define caché y límites. | Abierta |
 | Q8 | Productos sin EAN y al peso. | Pospuesto: `revisar/productos-sin-ean-y-al-peso.md`. | Pospuesta |
 | Q18 | Pasarelas. | Investigación en `investigacion-pasarelas.md`; a revisar juntos. | En curso |
 

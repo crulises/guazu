@@ -100,6 +100,8 @@ Modelo **RBAC propio en Postgres**, con permisos atómicos:
 - `membresias`: usuario × negocio × sucursal (nullable = todas) × rol. Cambiarlas
   **no** se hace por endpoints comunes, solo con permiso `usuarios.gestionar`, y
   queda en auditoría.
+- Hay además un **ámbito de plataforma** (el administrador del servicio) distinto de los
+  roles de negocio: resuelve conflictos del catálogo global y opera la plataforma.
 - Backend: dependencia `exigir(permiso, sucursal)`. Las reglas de negocio que
   dependen de datos (p. ej. "no aprobar tu propia compra") son código, no filas.
 
@@ -112,7 +114,7 @@ sin tocar las apps porque la decisión vive detrás de `exigir(...)`.
 
 ## Modelo de datos (borrador)
 
-Dinero: **enteros en centavos** [SUPUESTO; ABIERTO Q21], nunca `float`.
+Dinero: **enteros en centavos** (ver §Dinero), nunca `float`. Catálogo: ver `07-catalogo.md`.
 
 Identidad y estructura: `negocios`, `sucursales`, `usuarios`, `roles`,
 `roles_permisos`, `membresias`, `clientes` (usuario × negocio: estado de fiado,
@@ -346,6 +348,93 @@ eso Aurora pesa más que una VPS en complejidad y costo; una VPS con Postgres, G
 y MinIO en contenedores replica el entorno local casi tal cual. Se recomienda hacer un
 **ensayo de salida** (restaurar un dump en un Postgres limpio y levantar la API contra
 él) antes del primer cliente real y después cada tanto.
+
+## Dinero y cantidades (D32)
+
+- **Base de datos y API**: montos en `bigint` de **centavos** (`precio_centavos`, con el
+  sufijo siempre presente) más la moneda del negocio (código ISO). Cantidades en
+  `bigint` de **milésimas** (`cantidad_milli`; 1,5 kg = 1500). Porcentajes en **puntos
+  básicos** (21 % = 2100).
+- **Cliente (Flutter)**: una clase `Dinero` (centavos enteros + moneda) en
+  `packages/core`. La conversión ocurre **solo en los bordes**: al **mostrar**
+  (`centavos → "$ 1.250,50"` con `intl`, según la configuración de la moneda del negocio)
+  y al **leer lo que escribe el usuario** (`"1250,50" → centavos`). En el medio todo es
+  entero; nunca se opera con `double`.
+- **Cálculo** (solo en el backend): aritmética entera con puntos básicos, redondeo
+  *half-up* en cada paso y un redondeo comercial final configurable (por ejemplo, al
+  múltiplo de $10). Los casos están fijados en pruebas.
+- Una cantidad fraccionaria (un pesable) multiplica con milésimas y redondea una sola vez.
+
+## Idiomas (D31)
+
+- Solo la **interfaz**; los datos se muestran como se cargaron.
+- Flutter `gen_l10n`: archivos `.arb` por idioma (`es_AR` base, `en` preparado) con
+  plurales y marcadores. Cada app tiene los suyos y el `ui_kit` los textos comunes.
+- Reglas: **ningún texto fijo en código**; fechas, números y moneda con `intl`; el backend
+  devuelve **códigos de error estables más parámetros**, nunca frases, y la app las traduce.
+- La ayuda (D30) se organiza por idioma: `docs/es/`, `docs/en/`.
+- Costo: bajo si se hace desde la primera pantalla; el trabajo extra es la disciplina de
+  pasar cada texto por el `.arb`. Agregar un idioma después es traducir archivos.
+
+## Operaciones en lote en la app Negocio (D33)
+
+Toda tarea que se repite sobre muchos productos tiene un modo que evita entrar y salir
+de pantallas. La vista de detalle existe, pero **no es el camino de lo repetitivo**.
+
+- **Escaneo en bucle** (ingreso de mercadería, relevamiento de góndola, conteo): se
+  escanea, el producto se suma a una lista visible con cantidad 1 (escanear otra vez
+  incrementa), se corrige en línea y se confirma **todo junto** al final. Sin salir de la
+  pantalla.
+- **Grilla editable** (sobre todo en escritorio): edición en la misma tabla de costo,
+  margen, categoría, stock, precio promocional; teclado para moverse, filtros y orden.
+- **Selección múltiple con acciones**: cambiar categoría, margen, IVA, precio promocional,
+  activar o desactivar, sobre todos los seleccionados.
+- **Importar y exportar planillas** (CSV/Excel de proveedor) con **vista previa** y un
+  reporte de errores fila por fila.
+- **Backend**: endpoints de lote con **clave de idempotencia** del lote, **resultado por
+  ítem** (éxito parcial explícito) y tope de tamaño. Si es grande, se ejecuta como tarea en
+  segundo plano con progreso. La auditoría registra **un evento por lote** con el detalle
+  de los ítems.
+- **Deshacer**: ventana para revertir un lote con movimientos compensatorios (nunca
+  borrando).
+
+## Cómo sabe el escáner de qué negocio es (D34)
+
+- La API de lectura siempre recibe un `sucursal_id` explícito. Lo que se resuelve es
+  **cómo lo obtiene la app**:
+  1. **Sugerencia por ubicación**: cada sucursal tiene un **polígono** (`area`,
+     `geography(Polygon)` en PostGIS) que se dibuja en la configuración. La app manda su
+     posición a `GET /v1/sucursales/resolver?lat=&lon=` y el servidor responde qué
+     sucursales la contienen. Si hay una sola, la propone; si hay varias o ninguna, deja
+     elegir.
+  2. **QR del local** (pegado en la entrada o la góndola).
+  3. **Elección manual** y recordar la última.
+- Cuidados: la ubicación en interiores puede errar decenas de metros, así que los
+  polígonos se dibujan con margen y conviene un poco de histéresis; hace falta el permiso de
+  ubicación (privacidad y consentimiento, Ley 25.326), así que se **sugiere, no se
+  impone**; las coordenadas del cliente **no se guardan**, solo se usan para resolver.
+- Para leer precios no hay riesgo de suplantación de ubicación; si más adelante se usara
+  para algo sensible (retiro, validar entregas), habría que reforzarlo.
+- Al principio la app queda fijada al único negocio por configuración.
+
+## Tráfico y caché (D38)
+
+Unas centenas de consultas por minuto son pocas por segundo y una búsqueda por EAN con
+millones de filas tarda milisegundos (medido en almacenero). Alcanza con Postgres, la tabla
+de precios vigentes y, a lo sumo, una caché corta en memoria del proceso. Redis se evalúa
+cuando haya varios negocios o varias instancias del backend.
+
+## Hosting provisorio (D35)
+
+- Pruebas cerradas: **Supabase** (base, auth, storage) + backend en **Fly.io**.
+- Dominio `crulises.dev`; API en `guazu-api.crulises.dev/v1`. Los dominios `.dev` fuerzan
+  HTTPS, que Fly provee con certificado propio.
+- La URL de la API entra a las apps por configuración de compilación
+  (`--dart-define=API_URL=...`), así no hay que tocar código al mudar.
+- Poner el backend y la base **en la misma región** (la más cercana a Argentina que ofrezcan
+  ambos; por verificar) para no sumar latencia.
+- Más adelante, mudar a un lugar permanente (ver Portabilidad). Los emails quedan para
+  decidir (`revisar/proveedor-email.md`).
 
 ## Ayuda y tutoriales (D30)
 
