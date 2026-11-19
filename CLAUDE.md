@@ -37,6 +37,7 @@ Antes de escribir código, leé:
 - `docs/02-spec-tecnico.md` — arquitectura, stack y decisiones técnicas.
 - `docs/04-preguntas-y-decisiones.md` — qué está decidido y qué sigue abierto.
 - `docs/05-futuros-features.md` — lo hablado y **pospuesto**. No lo implementes.
+- `docs/08-plan-v0.1.md` — cortes de la v0.1 y qué significa "hecho".
 - `docs/07-catalogo.md` — catálogo global (SEPA + OFF) y capa por negocio.
 - `docs/06-setup-entorno.md` — armar el entorno desde cero y targets del Makefile.
 - `docs/investigacion-pasarelas.md` — pasarelas de pago y push (referencia).
