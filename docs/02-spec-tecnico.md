@@ -59,8 +59,11 @@ cuadro antes de implementarse.
 
 ## Stack
 
-- **Apps**: Flutter. Android primero (iOS descartado por ahora: USD 99/año; se
-  evalúa cuando el flujo esté probado). Escritorio solo la app Negocio.
+- **Apps**: Flutter. Android primero, pero **iOS-ready** (D29): el código se compila y
+  se prueba también para iOS en el simulador; falta solo pagar el Apple Developer
+  Program (USD 99/año) para firmar, distribuir y probar con push real. Escritorio solo
+  la app Negocio. Los permisos de cámara y ubicación se declaran también en
+  `Info.plist`.
 - **Escaneo EAN**: `mobile_scanner`. En escritorio, lectores USB como teclado.
 - **Backend**: FastAPI (Python async), Pydantic, OpenAPI.
 - **DB**: PostgreSQL. PostGIS cuando haga falta (varias sucursales, delivery).
@@ -323,6 +326,41 @@ Proyectos independientes (D9). Reutilización solo por copia: auth anónima y
 propia (nueva instancia de Supabase). Entorno Flutter/Android ya armado: ver Doc 3
 de almacenero.
 
+## Portabilidad: salir de Supabase (D27)
+
+Es **factible** mudar a Aurora PostgreSQL, a una VPS o a cualquier Postgres, si se
+respetan estas reglas desde el primer día. Se resumen en "el backend es el único que
+conoce a Supabase":
+
+| Pieza | Riesgo | Regla para poder salir |
+|-------|--------|------------------------|
+| Base de datos | Bajo | Migraciones en SQL plano, sin referencias al esquema `auth` de Supabase (nada de `auth.uid()` ni claves foráneas a `auth.users`). `usuarios.auth_id` es un `uuid` sin FK. Extensiones usadas (PostGIS, `pg_cron`) existen en Aurora y en una VPS. Mudar = `pg_dump` y restaurar. |
+| Aislamiento por negocio (RLS) | Medio | Si se usa RLS, las políticas leen una variable propia (`current_setting('app.negocio_id')`) que el backend fija con `SET LOCAL` en cada request. Nunca dependen de los roles `anon` / `authenticated` de Supabase. |
+| **Auth** | **Alto** | Es lo más acoplado: cuentas, sesión anónima, `linkIdentity` y Google. Camino de salida: **autoalojar GoTrue** (es el servicio de auth de Supabase, de código abierto) junto a cualquier Postgres, con el mismo comportamiento. Cambiar a otro proveedor (Cognito, Keycloak) implicaría reimplementar el anónimo con vinculación. El backend solo valida JWT por JWKS, sin otra dependencia. |
+| Storage | Bajo | Es compatible con S3: se mueve a S3 o MinIO cambiando endpoint y credenciales. El código usa un cliente S3 genérico. |
+| Funciones propias de Supabase | — | **No se usan** Edge Functions, Realtime ni el cliente de Supabase en las apps. |
+| Tareas programadas | Bajo | `pg_cron` o un proceso aparte; ambos portables. |
+
+Aurora no incluye Auth ni Storage: habría que sumar GoTrue y S3 (o equivalentes). Por
+eso Aurora pesa más que una VPS en complejidad y costo; una VPS con Postgres, GoTrue
+y MinIO en contenedores replica el entorno local casi tal cual. Se recomienda hacer un
+**ensayo de salida** (restaurar un dump en un Postgres limpio y levantar la API contra
+él) antes del primer cliente real y después cada tanto.
+
+## Ayuda y tutoriales (D30)
+
+- Cada flujo no obvio tiene un **icono de ayuda** (`?`, `i`, libro abierto o nota).
+  **Nunca emojis**: solo iconos, en toda la interfaz y los documentos.
+- La ayuda sale de archivos de texto en `app/apps/cliente/docs/` y
+  `app/apps/negocio/docs/` (uno por tema, con una clave estable). La app los
+  empaqueta como assets y un único widget del `ui_kit` (`AyudaIcono(clave)`) los
+  muestra en contexto; los mismos archivos arman el manual.
+- A futuro, tutoriales gráficos generados desde la propia app (recorridos guiados
+  sobre pantallas reales). Ver Doc 5.
+- Cada funcionalidad se entrega con su entrada de ayuda y su prueba. Para los cambios
+  de condición fiscal, además, casos de prueba con resultados esperados validados por
+  el contador.
+
 ## Imágenes y metadatos
 
 Flujo para cualquier foto subida (producto propio, evidencia de entrega):
@@ -372,7 +410,8 @@ Detalle en `06-setup-entorno.md`.
 ## Testing
 
 Backend con pytest contra Postgres real. Foco: stock (concurrencia, FEFO), cálculo
-de precio e impuestos, caja y arqueo, permisos por sucursal, auditoría inmutable,
+de precio e impuestos (incluida la conversión Monotributo ↔ RI, con casos fijos y
+prueba de ida y vuelta dentro del redondeo), caja y arqueo, permisos por sucursal, auditoría inmutable,
 libreta. Flutter: unit + widget.
 
 ## Estructura del repo

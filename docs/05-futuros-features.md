@@ -96,6 +96,14 @@ Notas de diseño:
 Las fotos se capturan desde la app y los metadatos se guardan aparte (Doc 2
 §Imágenes y metadatos). El volumen definirá cuánto hay que rediseñar para escalar.
 
+## Ayuda y aprendizaje
+
+| Feature | App | Estado |
+|---------|-----|--------|
+| Ayuda contextual con icono en cada flujo (base en v0.1) | C/N | diseñado |
+| **Tutoriales gráficos** generados desde la propia app (recorridos guiados) | C/N | idea, lejana |
+| Manual compilado a partir de `app/apps/<app>/docs/` | C/N | idea |
+
 ## Seguridad del personal
 
 | Feature | Estado |

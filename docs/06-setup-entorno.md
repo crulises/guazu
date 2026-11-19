@@ -35,6 +35,35 @@ Antes de la sesión de setup, lo único que **conviene tener hecho** es Homebrew
 Docker Desktop abierto y funcionando. Xcode no hace falta (iOS está fuera de alcance);
 `flutter doctor` lo va a marcar en rojo y es esperable.
 
+## Preparar iOS (para compilar y probar sin pagar)
+
+Objetivo (D29): que el día que se pague el Apple Developer Program solo haya que
+firmar y recompilar. Sin pagar se puede **compilar y correr en el simulador** y, con un
+Apple ID gratuito, instalar en un iPhone propio (con vencimiento corto). No hay push
+real, TestFlight ni App Store.
+
+| Paso | Quién |
+|------|-------|
+| Instalar **Xcode** (App Store, varios GB; requiere iniciar sesión con tu Apple ID) | **Vos** |
+| `sudo xcode-select -s /Applications/Xcode.app` y `sudo xcodebuild -license accept` | Vos (pide contraseña) |
+| `xcodebuild -runFirstLaunch` y `xcodebuild -downloadPlatform iOS` (runtime del simulador) | Yo |
+| `brew install cocoapods` | Yo |
+| `flutter doctor` debe mostrar iOS en verde | Yo |
+| Generar la carpeta `ios/` de cada app y compilar con `flutter build ios --simulator` | Yo, al crear los proyectos |
+
+Decidir **antes de crear los proyectos** los identificadores definitivos de cada app
+(`applicationId` en Android y *bundle id* en iOS, ej. `ar.guazu.cliente` y
+`ar.guazu.negocio`): cambiarlos después duele, y Firebase y Apple los usan.
+
+Esta máquina hoy tiene solo las herramientas de línea de comandos, sin Xcode, CocoaPods
+ni Node.
+
+## Para push: Firebase
+
+Cuando llegue el momento: `npm i -g firebase-tools` y
+`dart pub global activate flutterfire_cli` (hace falta Node). Detalle de cuentas en
+`costos.md`.
+
 ## Pasos (macOS Apple Silicon)
 
 ```bash

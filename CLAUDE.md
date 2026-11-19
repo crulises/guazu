@@ -78,6 +78,12 @@ modifiques desde acá. Ver `docs/02-spec-tecnico.md` §Reutilización.
 
 ## Convenciones
 
+- **Nada de emojis**, ni en la interfaz ni en docs: solo iconos. La ayuda se muestra
+  con un icono (`?`, `i`, libro abierto o nota) y sus textos viven en
+  `app/apps/<app>/docs/`.
+- Android primero, pero el código debe seguir siendo compilable para iOS.
+- El backend es el único que conoce a Supabase; seguir las reglas de portabilidad del
+  Doc 2.
 - Idioma de docs y nombres de dominio: español. Código y API: según lo decida el
   Doc 2.
 - API versionada `/v1`.

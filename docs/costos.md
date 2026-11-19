@@ -25,3 +25,35 @@ cambian: revisar antes de decidir.
 - **Android**: nada de pago para APK directo (grupo de pruebas).
 - **iOS**: Apple Developer Program (USD 99/año), Mac con Xcode, clave APNs `.p8`
   subida a Firebase para el push.
+
+## Cuentas necesarias y qué piden
+
+Verificado en documentación oficial el 2026-11-18; pueden cambiar.
+
+### Firebase (para push)
+- Hace falta una **cuenta de Google** y crear un proyecto en la consola de Firebase.
+  **No hace falta empresa ni declarar que sos una organización.**
+- El plan gratuito (Spark) no pide tarjeta, y Cloud Messaging figura como gratuito.
+  Fuente: [Firebase Pricing](https://firebase.google.com/pricing).
+- Se registra cada app (Android con su `applicationId`, iOS con su bundle id) y se
+  descarga su archivo de configuración. El backend manda mensajes con una **cuenta de
+  servicio** (clave JSON) del mismo proyecto.
+- Para iOS además: la cuenta de Apple Developer y una clave APNs `.p8` subida a Firebase.
+
+### Google Play (solo si se publica en Play Store)
+- No hace falta para repartir un APK directo a los testers.
+- Cuenta personal o de organización. Una cuenta **personal creada desde noviembre de
+  2023** debe hacer una **prueba cerrada con al menos 12 testers durante 14 días**
+  antes de poder publicar en producción. Fuente:
+  [Play Console Help](https://support.google.com/googleplay/android-developer/answer/14151465).
+  Las cuentas de organización tienen otros requisitos (por verificar).
+
+### Apple Developer Program
+- Como **individuo** no hace falta D-U-N-S ni empresa: se necesita una cuenta Apple
+  con verificación en dos pasos, ser mayor de edad y puede pedirse documento de
+  identidad. Tu **nombre legal** figura como vendedor en la App Store.
+- Como **organización** hace falta entidad legal, D-U-N-S, sitio web público y un
+  correo del dominio. Las empresas unipersonales (monotributo) se inscriben como
+  individuo. Se puede pasar de individuo a organización más tarde.
+- Fuentes: [Inscripción](https://developer.apple.com/help/account/membership/program-enrollment/),
+  [D-U-N-S](https://developer.apple.com/help/account/membership/D-U-N-S/).
