@@ -655,7 +655,23 @@ El paso a paso para armar la máquina está en `06-setup-entorno.md`.
 
 ## Específicos de guazu
 
-*(Todavía vacío: se llena desde el corte 0, con fecha.)*
+### Setup de la Mac nueva (2026-11-22) **[guazu]**
+- Mac Apple Silicon, macOS 27.2, 36 GB de RAM, Xcode 27.2 ya instalado. Guion de `06-setup-entorno.md`
+  seguido sin cambios; todo bajó sin cortes.
+- **Flutter 3.50.0 desde git** (`git clone --depth 1 --branch 3.50.0`) en `~/development/flutter`. `flutter doctor`
+  marca `[!] Flutter` por «unknown channel» (`[user-branch]`): es esperable con un clon por tag, no es un error.
+- **Chrome** en rojo en `flutter doctor`: la web está fuera de alcance.
+- `avdmanager create avd` imprime el error de `devices.xml` y crea el AVD igual (ya conocido).
+- **Docker Desktop** arrancó con ~7,7 GB: subirlo a >= 8 GB (Settings > Resources) antes del primer `make up`. El
+  comando `docker` no está en el PATH hasta que Docker Desktop termina de configurarse; sirve
+  `/Applications/Docker.app/Contents/Resources/bin/docker`.
+- `brew install supabase/tap/supabase` trae la **3.2.0**, pero el CI fija la **3.1.0**. Solución aplicada: `brew uninstall
+  supabase` y copiar a `/opt/homebrew/bin/supabase` el binario de `supabase_3.1.0_darwin_arm64.tar.gz` del release
+  de GitHub (sha256 verificado contra `checksums.txt`). Ya no lo gestiona brew, así que no se actualiza solo.
+- **Docker fuera del PATH:** se agregó `/Applications/Docker.app/Contents/Resources/bin` al PATH en `~/.zshrc`
+  (sin sudo). En esta versión de Docker Desktop la memoria se cambia en Settings > VM resources (quedó en 16 GB).
+- `libpq` de brew es la 19 (el doc mencionaba la 17): sirve, `pg_dump` solo debe ser >= al servidor.
+- El `git config` global usó el email personal, no el noreply de GitHub: ajustar por repo.
 
 ---
 
