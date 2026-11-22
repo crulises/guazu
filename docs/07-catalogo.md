@@ -106,11 +106,13 @@ Medido sobre 134 505 productos: sin tamaño 61,1 % → 48,8 %; `completo` 53,1 %
 
 ### Qué cambia para guazu
 
-- **`descartado` no debe bloquear al negocio.** En almacenero un producto descartado se oculta
+- **Decidido (D53): `descartado` no bloquea al negocio.** En almacenero un producto descartado se oculta
   de la búsqueda (decisión de su dueño, reversible). Acá el negocio **escanea su mercadería real**:
   si el EAN está `descartado`, el alta igual debe ofrecer el dato disponible y dejar que el
   negocio lo complete en su capa (`productos`); lo descartado solo se oculta de **búsquedas por
-  nombre** y de sugerencias. **[SUPUESTO]**, confirmar en el corte 2.
+  nombre** y de sugerencias. **[SUPUESTO]**, confirmado 2026-11-21.
+  Si el negocio autoriza compartirlo (`compartible`), el moderador de plataforma lo ve en
+  **Revisiones**, lo ajusta y lo sube al catálogo global; si no, queda solo en su capa.
 - **Lo que el negocio corrige** va a su capa y, como idea futura, a una **cola de
   sugerencias** para la plataforma (ver Doc 5).
 - El **estado de calidad se muestra solo en el panel de plataforma**, no a clientes.
@@ -133,7 +135,7 @@ no tiene imagen. El escáner del cliente muestra imagen, así que:
    recomprimir (Doc 2 §Imágenes).
 3. OFF aporta enlaces a imágenes, que **se enlazan y no se copian** (licencia CC-BY-SA).
 
-Decisión abierta: Q30 en Doc 4.
+Decidido (D52): para la v0.1 alcanza con icono de reemplazo más foto propia opcional.
 
 ## Pendiente de heredar del otro proyecto
 

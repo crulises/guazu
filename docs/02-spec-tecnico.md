@@ -43,7 +43,7 @@ app/
   dependen de las apps, nunca al revés.
 - Cada app genera su APK: `cd app/apps/cliente && flutter build apk`
   (y lo mismo en `negocio`). Un target del Makefile arma ambos (`make apk`).
-- Distinto `applicationId` por app (a confirmar, Q29: `ar.guazu.*` o `dev.crulises.guazu.*`).
+- Distinto `applicationId` por app: `dev.crulises.guazu.cliente` y `dev.crulises.guazu.negocio` (D50).
 - El backend es el único que decide qué dato se devuelve según credenciales y
   permisos. Ocultar pantallas en el cliente es solo UX, nunca seguridad.
 
@@ -328,6 +328,27 @@ Proyectos independientes (D9). Reutilización solo por copia: auth anónima y
 propia (nueva instancia de Supabase). Entorno Flutter/Android ya armado: ver Doc 3
 de almacenero.
 
+## Versionado (D51)
+
+Heredado de almacenero (`app/tool/version.sh`, `make apk`, `make apk-release`):
+
+- **Serie** (`0.0`, `0.1`, ...) = `version:` del `pubspec.yaml` de cada app; se cambia a mano al
+  cerrar un ciclo de pruebas.
+- **Builds de prueba** (`make apk-cliente` / `apk-negocio`): el último número sube solo
+  (`0.0.1`, `0.0.2`...) y vuelve a 0 al cambiar de serie. El contador vive en el `.git` común
+  (no ensucia el árbol ni choca entre worktrees); un contador por app. El APK lleva commit
+  (con `+local` si hay cambios) y hora; el `versionCode` sale de la fecha para poder instalar
+  encima.
+- **Releases chicas**: `0.y.0` con **tag `vX.Y.Z`**. `make apk-release` toma la versión del
+  `pubspec`, usa la cantidad de commits como `versionCode`, avisa si no estás parado en el tag
+  o hay cambios sin commitear, y firma con la keystore (fuera del repo).
+- **`1.0.0`**: cuando haya una versión beta distribuida con todo funcionando.
+- **Backend**: la versión del tag entra como `APP_VERSION` en la imagen y se ve en `/v1/health`.
+- Las dos apps pueden versionarse por separado; el tag del repo sigue la **v0.y.0 de la
+  plataforma** y el detalle de cada app va en su `pubspec`. **[SUPUESTO]**, a ajustar en el
+  corte 0.
+- La pantalla «Acerca de» muestra versión, commit, servidor y estado.
+
 ### Reglas fiscales como datos (D42)
 
 Lo que diga el contador no debe obligar a tocar la estructura. Por eso las reglas **no están en
@@ -345,8 +366,36 @@ código**:
 
 ## Panel de plataforma
 
-Aplicación web chica, **solo para el administrador de plataforma** (vos), no para los negocios.
-Se reutiliza la de almacenero (nginx sin privilegios, Alpine.js, API en `/v1/admin`, login con
+Aplicación web chica, **solo para el equipo de plataforma** (hoy vos), no para los negocios.
+Es el lugar cómodo de trabajo **sin depender del backend de datos (Supabase)**: todo pasa por
+la API `/v1/admin`. Secciones:
+
+| Sección | Para qué |
+|---------|----------|
+| **Revisiones** | Conflictos del catálogo, productos `descartado` o `dudoso`, y contribuciones de negocios (ajustar y aprobar antes de subirlas al catálogo global) |
+| **Calidad y ETL** | Tablero de calidad, ejecuciones del ETL, diccionarios |
+| **Usuarios** | Buscar, ver, suspender; ver membresías |
+| **Roles y promociones** | Promover o quitar admin, moderador y otros roles; ver quién tiene qué |
+| **Negocios** | Alta, suspensión y estado de cada negocio (a futuro, SaaS) |
+| **Auditoría** | Quién hizo qué, también en el panel |
+| **Configuración** | Parámetros globales y banderas (por ejemplo, el superadmin) |
+
+Reglas:
+- **Un admin puede ser también cliente**, pero **no puede validar, aprobar ni promover lo
+  suyo** (sus propios aportes, su propio rol, su propia deuda). Es código en el backend, no
+  una fila (D54).
+- **Superadmin**: puede todo, **solo para pruebas y último recurso**. Pocas cuentas, apagado
+  por configuración en producción, siempre en auditoría.
+- **Contribuciones**: un producto que dio de alta un negocio **no pasa al catálogo global sin
+  su autorización** (marca `compartible`). Si la da, el moderador lo ve, **ajusta** y recién
+  entonces lo sube (D53).
+- Login con 2FA para el equipo de plataforma.
+- Agregado por mí, a confirmar: registro de **motivos al rechazar**, vista de **sesiones
+  activas**, **exportar los datos de un usuario** (si lo pide) y borrado, y una sección de
+  **abuso** (IPs y sesiones que chocan con el rate limit).
+
+Base de implementación:
+se reutiliza la de almacenero (nginx sin privilegios, Alpine.js, API en `/v1/admin`, login con
 GoTrue, solo rol de plataforma). Funciones iniciales: conflictos del catálogo, tablero de
 calidad (Doc 7) y ejecuciones del ETL. Se sirve en `guazu.crulises.dev/admin/` (un solo nivel de
 subdominio). Detalle de operación y trampas: Doc 3 §Despliegue.

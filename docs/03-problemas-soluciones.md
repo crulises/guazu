@@ -563,8 +563,8 @@ El paso a paso para armar la máquina está en `06-setup-entorno.md`.
 - Una vez publicado, el `applicationId` **no se puede cambiar**; Android lo trata como otra
   app, así que cambiarlo después hace perder sesiones. Almacenero lo cambió antes del primer
   release a `dev.crulises.almacenero` (dominio **que controlás**, invertido).
-- **Acá hay una decisión abierta**: se aprobó `ar.guazu.cliente` y `ar.guazu.negocio`, pero
-  `guazu.ar` no es un dominio tuyo. Ver `04-preguntas-y-decisiones.md` Q29.
+- **Acá, decidido (D50, 2026-11-21)**: `dev.crulises.guazu.cliente` y `dev.crulises.guazu.negocio`.
+  Se había pensado `ar.guazu.*`, pero `guazu.ar` no es un dominio tuyo.
 - La **keystore** firma las actualizaciones: si se pierde, no se puede actualizar la app.
   Guardarla **fuera del repo y con copia** (gestor de contraseñas). Mismo cuidado para la clave
   del Play Store y de Apple.

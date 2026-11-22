@@ -11,6 +11,11 @@ Dentro: auth anónima, un negocio/sucursal (esquema multi-negocio), catálogo EA
 alta por escaneo, stock con lotes opcionales, costo/margen/IVA, precio promocional
 manual, escáner de precios del cliente. Fuera: todo lo demás (ver Doc 1 y Doc 5).
 
+## Si el usuario dice que es una computadora nueva
+
+Seguí el **«Guion de computadora nueva»** de `docs/06-setup-entorno.md`: diagnosticar, decir
+qué hace solo el usuario, instalar el resto y verificar. Leé antes `docs/03-problemas-soluciones.md`.
+
 ## Qué es esto
 
 Nombre provisorio: **Guazú**. Sistema para un local comercial que vende productos

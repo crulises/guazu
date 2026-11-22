@@ -46,8 +46,8 @@ cerrado el 3.
 
 - Monorepo: `app/` como workspace de Dart con `apps/cliente`, `apps/negocio` y
   `packages/core`, `ui_kit`, `scanner`; `backend/`, `supabase/`, `etl/`.
-- Identificadores de app: **a confirmar** (Q29 en Doc 4: `ar.guazu.*` o `dev.crulises.guazu.*`);
-  `ios/` generado en cada app.
+- Identificadores de app: `dev.crulises.guazu.cliente` y `dev.crulises.guazu.negocio` (D50);
+  `ios/` generado en cada app. `app/tool/version.sh` y el versionado del Doc 2 §Versionado.
 - Puertos propios (Supabase `55321`+, backend `8100`, panel `8180`), `name: guazu` en el compose
   y `project_id` propio, para convivir con almacenero.
 - **i18n armado** (`es_AR` base, `en` preparado) y `AyudaIcono(clave)` del `ui_kit`.

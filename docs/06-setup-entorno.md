@@ -58,8 +58,8 @@ real, TestFlight ni App Store.
 | Generar la carpeta `ios/` de cada app y compilar con `flutter build ios --simulator` | Yo, al crear los proyectos |
 
 Decidir **antes de crear los proyectos** los identificadores definitivos de cada app
-(`applicationId` en Android y *bundle id* en iOS; **a confirmar**, Q29 en Doc 4:
-`ar.guazu.*` o `dev.crulises.guazu.*`): cambiarlos después duele, y Firebase y Apple los usan.
+(`applicationId` en Android y *bundle id* en iOS: `dev.crulises.guazu.cliente` y
+`dev.crulises.guazu.negocio`, D50): cambiarlos después duele, y Firebase y Apple los usan.
 
 Esta máquina hoy tiene solo las herramientas de línea de comandos, sin Xcode, CocoaPods
 ni Node.
@@ -69,6 +69,27 @@ ni Node.
 Cuando llegue el momento: `npm i -g firebase-tools` y
 `dart pub global activate flutterfire_cli` (hace falta Node). Detalle de cuentas en
 `costos.md`.
+
+## Guion de «computadora nueva» (para Claude)
+
+Si el usuario dice algo como *«Esta es una computadora nueva, tiene macOS y quisiera arrancar
+con el setup»* (o Windows), Claude **no instala a ciegas**: guía en este orden y espera la
+confirmación de cada paso del usuario antes de seguir.
+
+1. **Diagnóstico**: `uname -m`, `sw_vers`, qué hay ya instalado (`brew`, `git`, `docker`,
+   `flutter`, `java`, `gh`, `psql`, `xcodebuild`). Decir qué falta.
+2. **Pasos que solo hace el usuario** (con el comando exacto y por qué): Homebrew, Docker
+   Desktop (con ≥ 8 GB de memoria), Xcode y su licencia (`sudo xcodebuild -license`,
+   `xcodebuild -runFirstLaunch`), `gh auth login`, `supabase login`, `fly auth login`.
+3. **Pasos que hace Claude** una vez listo lo anterior: `git config` (noreply de GitHub),
+   clonar `guazu` y, como referencia, `almacenero`; `brew install` de lo que falte (sección
+   siguiente); variables de entorno; SDK, NDK y AVD `guazu_pixel`; `flutter config`.
+4. **`.env`** desde `.env.example` (el usuario trae los secretos, nunca están en el repo).
+5. **Verificar**: `make doctor && make up && make test` (cuando existan). Mientras no haya
+   Makefile, la lista de verificación de abajo.
+6. **Anotar** en `03-problemas-soluciones.md` todo lo que falle, con fecha, y ajustar este doc.
+
+Claude pide permiso para cada descarga grande y avisa que la máquina no debe hibernar.
 
 ## Pasos (macOS Apple Silicon)
 

@@ -72,6 +72,11 @@ pospuesto vive en `05-futuros-features.md`.
 | D47 | Escáner con `mobile_scanner` (`ean13`, `ean8`, `upcA`, `upcE`), validación 8 a 14 dígitos en la app, normalización solo en el backend y entrada manual de respaldo. | Ya probado en celular real en almacenero. Doc 3 §Escáner. |
 | D48 | **Panel web de plataforma** reutilizado de almacenero. | Para conflictos, calidad y ETL. Doc 2 §Panel. |
 | D49 | Guazu usa **puertos y nombre de compose propios** para convivir con almacenero en la misma Mac. | Doc 3 §Docker. |
+| D50 | Identificadores: **`dev.crulises.guazu.cliente`** y **`dev.crulises.guazu.negocio`** (dominio invertido que controlás). | Decidido 2026-11-21. No cambian tras publicar; Firebase y Apple los usan. |
+| D51 | **Versionado** como en almacenero: serie en `pubspec.yaml`; cada `make apk` de prueba sube el último número (`0.0.1`, `0.0.2`...); las releases chicas son `0.y.0` con tag `vX.Y.Z`; **`1.0.0`** cuando haya una beta distribuida con todo funcionando. | Doc 2 §Versionado. |
+| D52 | Imágenes en la v0.1: **icono de reemplazo más foto propia opcional** del negocio. | Decidido 2026-11-21. SEPA no trae imágenes. Doc 7 §Imágenes. |
+| D53 | Un producto `descartado` **sí se puede dar de alta** en un negocio. El admin de plataforma puede verlo y **proponerlo al catálogo global**, ajustándolo antes, **solo si el negocio autorizó compartirlo**. | Decidido 2026-11-21. Doc 7 §Calidad y Doc 2 §Panel. |
+| D54 | **Un admin puede ser también cliente, pero no valida lo suyo** (separación de funciones). Existe un **superadmin** solo para pruebas y último recurso: pocas cuentas, apagado por configuración en producción, y todo lo que hace queda en auditoría. | Decidido 2026-11-21. Doc 2 §Roles. |
 
 ## Abiertas
 
@@ -80,9 +85,6 @@ pospuesto vive en `05-futuros-features.md`.
 | Q27 | Condición fiscal: validar con contador. | Ver `validar-profesional/contador.md`. Antes de la etapa 0.2. | Abierta |
 | Q12 | Fiado: valores iniciales de límite, recargo y plazo. | Propuestas en Doc 5. | Abierta |
 | Q8 | Productos sin EAN y al peso. | Pospuesto: `revisar/productos-sin-ean-y-al-peso.md`. | Pospuesta |
-| Q29 | **Identificadores de las apps.** Se aprobó `ar.guazu.cliente` y `ar.guazu.negocio`, pero almacenero usa el dominio invertido que controlás (`dev.crulises.almacenero`). ¿`dev.crulises.guazu.cliente` y `.negocio`? | No se pueden cambiar tras publicar; Firebase y Apple los usan. | **Abierta, antes del corte 0** |
-| Q30 | **Imágenes de productos.** SEPA no trae; el 68,6 % del catálogo no tiene imagen. ¿Icono de reemplazo más foto propia opcional del negocio es suficiente para la v0.1? | Doc 7 §Imágenes. | Abierta, antes del corte 6 |
-| Q31 | Un producto `descartado` por calidad: ¿se puede dar de alta igual en un negocio? | Propuesta: sí (Doc 7 §Calidad). | Abierta, corte 2 |
 | Q18 | Pasarelas. | Investigación en `investigacion-pasarelas.md`; a revisar juntos. | En curso |
 
 ## Ideas a sumar
