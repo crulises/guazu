@@ -17,6 +17,25 @@ negocio y una sola persona con todos los roles.
 Dentro: Doc 1 §Etapas, fila 0.1. Fuera: POS, caja, pedidos, fiado, pagos, delivery, grupos
 familiares, facturación, push, email, iOS publicado (el código sí queda listo).
 
+## Tickets
+
+Cada hito es un issue de GitHub (la fuente de verdad del alcance sigue siendo este documento). Las ramas
+y los PR los referencian: `feat/<issue>-<descripcion>` y `Closes #<issue>`.
+
+| Hito | Issue |
+|------|-------|
+| 0 Esqueleto del repo y entorno | #2 |
+| 1 Identidad, negocio, permisos y auditoría | #3 |
+| 2a ETL base | #4 |
+| 2b Búsqueda por EAN | #5 |
+| 2c Normalizador y calidad | #6 |
+| 2d Corrección de la plataforma y sugerencias | #7 |
+| 3 Productos, costos, impuestos y precio | #8 |
+| 4 Stock | #9 |
+| 5 Operaciones en lote | #10 |
+| 6 Escáner del cliente | #11 |
+| 7 Despliegue de pruebas cerradas | #12 |
+
 ## Reglas de cada corte
 
 Un corte no está terminado si le falta alguna de estas cosas:
