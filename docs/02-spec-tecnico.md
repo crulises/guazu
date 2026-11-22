@@ -130,6 +130,21 @@ madura) para políticas más expresivas; **Cerbos** o **OpenFGA** (servidor de
 políticas / autorización tipo Zanzibar) para relaciones complejas. Se migra
 sin tocar las apps porque la decisión vive detrás de `exigir(...)`.
 
+### Aislamiento por negocio en la práctica (issue #3)
+
+- Dos capas: el backend **filtra siempre** por el negocio del contexto, y Postgres lo refuerza con RLS.
+  Como un superusuario ignora RLS, las consultas de un negocio corren con `set local role guazu_app` y
+  `app.negocio_id` fijado (`app/tenant.py`). Sin esa variable no se ve ni se escribe nada.
+- `negocio_id` va en toda tabla de datos, y las claves foráneas compuestas (`(rol_id, negocio_id)`,
+  `(sucursal_id, negocio_id)`) impiden asignar un rol o una sucursal de otro negocio.
+- Las rutas de un negocio llevan `{negocio_id}` en el path y piden un **permiso** (`exigir("roles.ver")`).
+  Un negocio inexistente y uno ajeno dan el mismo 403: no se revela cuáles existen.
+- Roles y membresías son **escrituras protegidas por trigger**: solo se habilitan dentro de la transacción
+  del endpoint (después de comprobar `usuarios.gestionar`) o de un target del Makefile (`make dueno`,
+  `make plataforma`). `GET /v1/me` informa qué permisos tiene cada rol, solo como ayuda para la interfaz.
+- Cupo por IP en `/v1/auth/*` y por sesión en `/v1/me` (`config`: `auth_altas_por_hora_ip`,
+  `auth_refresh_por_hora_ip`, `auth_login_por_hora_ip`, `sesion_pedidos_por_minuto`).
+
 ## Modelo de datos (borrador)
 
 Dinero: **enteros en centavos** (ver §Dinero), nunca `float`. Catálogo: ver `07-catalogo.md`.

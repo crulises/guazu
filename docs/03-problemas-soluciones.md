@@ -327,6 +327,29 @@ El paso a paso para armar la máquina está en `06-setup-entorno.md`.
 - **Shell no interactiva:** `~/.zshrc` no se carga; para correr `make` desde un script usar `zsh -ic '...'`.
 - **`tool/version.sh`** con un contador vacío (no inexistente) falla por `set -e`; el script lo crea solo.
 
+### Identidad, permisos y RLS (issue #3, 2026-11-23) **[guazu]**
+- **RLS no frena a un superusuario.** El backend se conecta como `postgres`, que ignora las políticas
+  (incluso con `force row level security`). Solución: un rol sin privilegios `guazu_app`; cada consulta de
+  un negocio corre en `app/tenant.py::tx_negocio`, que hace `set local role guazu_app` y fija
+  `app.negocio_id`. La prueba lo verifica con ese rol (otro negocio no se ve ni se escribe, y `usuarios.email`
+  no es legible).
+- **Un token anónimo viejo no puede revertir una cuenta registrada.** Tras vincular el email el token anterior
+  sigue vigente un rato y dice `is_anonymous: true`. El alta perezosa usa
+  `es_anonimo = usuarios.es_anonimo and excluded.es_anonimo`.
+- **Vincular anónimo a cuenta** con GoTrue: `PUT /user` con el token de la sesión (conserva el mismo id) y
+  después un refresh para obtener la sesión nueva. Un email repetido responde 422 con "already" en el cuerpo:
+  se traduce a la regla `email_en_uso`.
+- **La auditoría no lleva FK** a `negocios` ni a `usuarios`: es solo-agregar, y con FK un negocio de prueba
+  no se podría borrar sin tocar el rastro. Los tests filtran por id y nunca cuentan filas totales.
+- **Editar una migración ya aplicada** en local exige `supabase db reset` (también corre el seed). Solo se
+  hace mientras la migración no está en `main`; después, una migración nueva.
+- **Tests de cupo por sesión:** crear la persona de prueba ya consume un pedido; reiniciar el limitador
+  después de fijar el límite.
+- **Un permiso desconocido en `exigir(...)` falla al importar** (no al primer pedido): un typo no deja un
+  endpoint abierto ni cerrado por accidente.
+- **La base conoce los permisos de los roles de fábrica** (`instalar_roles_de_fabrica`) y el código también
+  (`ROLES_DE_FABRICA`): una prueba de paridad exige que no se separen.
+
 ### Casos de prueba de dinero e impuestos **[guazu]**
 - Los casos del cálculo de precio y de la conversión Monotributo ↔ RI se **fijan como datos**
   (entrada → salida exacta) y los valida el contador (`validar-profesional/contador.md`).
