@@ -291,6 +291,28 @@ El paso a paso para armar la máquina está en `06-setup-entorno.md`.
   un backend falso sin red.
 - La lista es perezosa: en el test hay que agrandar la pantalla para que construya las filas.
 
+### Rol moderador, sugerencias y panel (heredado de los cortes 15 y 16) **[heredado]**
+- **«Failed to fetch» en el panel con el backend sano.** Causa: un 500 sin cabeceras CORS (salía de
+  `ServerErrorMiddleware`, por fuera del CORS) que el navegador muestra así; en el caso real, un
+  `pack_cantidad: 1` contra `pack_cantidad > 1`. Solución: errores que explican la regla (Doc 2 §Panel)
+  y «pack de 1» se guarda como «sin pack». Ante un «Failed to fetch»: `docker compose logs backend`.
+- **`auditoria` rechaza una entidad nueva** (`..._entidad_check`): la lista es cerrada; cada entidad
+  nueva amplía el `check` en su migración (`drop constraint` + `add constraint`).
+- **`x-show` de Alpine evalúa sus expresiones aunque oculte el bloque**: con datos que pueden ser
+  `null` usar `<template x-if>` o `?.`. En un handler, leer lo que haga falta de la ficha **antes**
+  de cerrarla. El `Error` del front debe llevar `status` y `detalle` para reaccionar a un 409.
+- **Panel de prueba en otro puerto → «No puedo conectar»:** CORS; levantar con
+  `CORS_ORIGINS=http://localhost:<puerto>`.
+- **Tests de correcciones con nombre fijo dan 409 a veces:** una corrida que falló dejó basura; nombres
+  con sufijo aleatorio y limpiar las filas hijas antes de borrar.
+- **Un moderador no entra al panel de configuración:** propone desde la app y aprueba el admin; las
+  capacidades (no los roles) lo deciden.
+- **Android 11+: tocar un enlace de «Acerca de» no hace nada** si falta el intent `VIEW https` en
+  `<queries>` del manifest (`url_launcher`).
+- **El normalizador no era idempotente** con casos reales (`oBLEAS`, dos sufijos de SEPA, la marca
+  repetida): los motivos que salen de comparar con el crudo (`tamano_en_conflicto`, `abreviado`)
+  viajan con la fila (`_PEGAJOSOS`).
+
 ### Casos de prueba de dinero e impuestos **[guazu]**
 - Los casos del cálculo de precio y de la conversión Monotributo ↔ RI se **fijan como datos**
   (entrada → salida exacta) y los valida el contador (`validar-profesional/contador.md`).

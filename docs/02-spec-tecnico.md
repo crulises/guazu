@@ -101,7 +101,25 @@ Modelo **RBAC propio en Postgres**, con permisos atómicos:
   **no** se hace por endpoints comunes, solo con permiso `usuarios.gestionar`, y
   queda en auditoría.
 - Hay además un **ámbito de plataforma** (el administrador del servicio) distinto de los
-  roles de negocio: resuelve conflictos del catálogo global y opera la plataforma.
+  roles de negocio: resuelve conflictos del catálogo global y opera la plataforma. Sus roles
+  son `admin`, `moderador` y `superadmin` (D54) y viven en una tabla propia, no en las
+  membresías de un negocio.
+- **Los endpoints piden una capacidad, nunca un rol** (heredado de almacenero): el mapa
+  rol → capacidades se puede mover a tablas sin tocar endpoints. Capacidades de plataforma
+  previstas: `admin.acceder`, `usuario.ver`, `usuario.cambiar_rol`, `catalogo.ver`,
+  `catalogo.editar` (corregir y desbloquear campos), `catalogo.crear` (alta directa),
+  `catalogo.sugerir`, `catalogo.sugerencias.resolver`, `conflictos.resolver`, `config.editar`,
+  `auditoria.ver`, y más adelante `etl.ver`, `etl.ejecutar`, `etl.cancelar`.
+- **Reparto:** el `moderador` de plataforma tiene `catalogo.ver` y `catalogo.sugerir` y
+  **no entra a configuración ni ETL**; el `admin` suma `catalogo.crear`, `catalogo.editar`,
+  `catalogo.sugerencias.resolver`, `conflictos.resolver`, `usuario.cambiar_rol` y `config.editar`.
+- **Salvaguardas** (Doc 3 §Fichas): nadie cambia su propio rol, un admin tiene que estar
+  **registrado** (un anónimo no inicia sesión en el panel), el cambio de rol queda auditado y
+  el trigger exige habilitar la escritura dentro de la transacción. El rol vive en Postgres,
+  no en el JWT: revocar es un `update` que vale en el siguiente request.
+- **Auditoría de plataforma** (`auditoria`, solo-agregar por trigger): quién, qué, cuándo,
+  antes, después y nota. La entidad auditable es una **lista cerrada** en un `check`; cada
+  entidad nueva la amplía en su migración.
 - Backend: dependencia `exigir(permiso, sucursal)`. Las reglas de negocio que
   dependen de datos (p. ej. "no aprobar tu propia compra") son código, no filas.
 
@@ -332,6 +350,9 @@ de almacenero.
 
 Heredado de almacenero (`app/tool/version.sh`, `make apk`, `make apk-release`):
 
+- **`0.0.x` es el número de compilación.** Hasta la primera release, cada `make apk-cliente` y
+  `make apk-negocio` sube el último número (`0.0.1`, `0.0.2`, …). **`0.1.0` es la primera release**
+  (plan: `08-plan-v0.1.0.md`), con tag `v0.1.0`; después vuelve a empezar la cuenta en `0.1.1`, ….
 - **Serie** (`0.0`, `0.1`, ...) = `version:` del `pubspec.yaml` de cada app; se cambia a mano al
   cerrar un ciclo de pruebas.
 - **Builds de prueba** (`make apk-cliente` / `apk-negocio`): el último número sube solo
@@ -343,11 +364,19 @@ Heredado de almacenero (`app/tool/version.sh`, `make apk`, `make apk-release`):
   `pubspec`, usa la cantidad de commits como `versionCode`, avisa si no estás parado en el tag
   o hay cambios sin commitear, y firma con la keystore (fuera del repo).
 - **`1.0.0`**: cuando haya una versión beta distribuida con todo funcionando.
-- **Backend**: la versión del tag entra como `APP_VERSION` en la imagen y se ve en `/v1/health`.
+- **Backend**: la versión del tag entra como `APP_VERSION` en la imagen y se ve en **`/v1/salud`**
+  (junto con el commit y la hora de compilación), para que «Acerca de» muestre la versión del
+  servidor además de la de la app. El endpoint se llama `/v1/salud` (D55).
 - Las dos apps pueden versionarse por separado; el tag del repo sigue la **v0.y.0 de la
   plataforma** y el detalle de cada app va en su `pubspec`. **[SUPUESTO]**, a ajustar en el
   corte 0.
-- La pantalla «Acerca de» muestra versión, commit, servidor y estado.
+- La pantalla **«Acerca de»** (en las dos apps, `packages/ui_kit`) muestra: nombre y versión, versión
+  y commit, hora de compilación, URL del servidor, estado de `/v1/salud` (con la demora o el motivo),
+  **versión del backend**, IP del dispositivo por interfaz, las atribuciones de datos con sus
+  licencias (Doc 7 §Atribuciones) y las licencias de librerías. Es la primera herramienta de
+  diagnóstico («¿es el APK que acabo de compilar?»: Doc 3 §Probar en celular) y es accesible
+  **aunque no haya conexión**. Los errores de red dicen «El servidor respondió 403 (…)» cuando hay
+  respuesta, para no confundir «sin red» con «rechazado».
 
 ### Reglas fiscales como datos (D42)
 
@@ -393,6 +422,27 @@ Reglas:
 - Agregado por mí, a confirmar: registro de **motivos al rechazar**, vista de **sesiones
   activas**, **exportar los datos de un usuario** (si lo pide) y borrado, y una sección de
   **abuso** (IPs y sesiones que chocan con el rate limit).
+
+**Fichas por entidad** (heredado, segunda iteración de almacenero): la tabla cruda sirve para
+cambios y acciones masivas, y cada fila abre una **ficha** lateral con todo lo que se puede hacer
+con esa entidad **pasando por la lógica de negocio del backend**, no tocando celdas sueltas.
+Las fichas se enlazan entre sí. Producto: datos, origen, campos bloqueados, conflictos, qué dijo cada
+fuente (crudo), sugerencias y cambios anteriores; acciones: corregir (bloquea contra el ETL),
+desbloquear un campo, resolver conflictos. Usuario: identidad, rol, cambio de rol, historial.
+
+**Sección Catálogo** (Productos · Conflictos · Sugerencias con globito de pendientes · Alta /
+corrección por EAN con autocompletado de marca y lo que dijo cada fuente al lado) y **Ayuda →
+Estándares de carga** (Doc 10).
+
+**Errores que explican la regla** (heredado, Doc 4 §10-E de almacenero): una operación que falla
+dice **qué regla se violó, por qué y cómo se resuelve**. `services/reglas.py` es el catálogo de reglas
+(`codigo` estable, `titulo`, `mensaje`, `como_resolver`, status); cada constraint de la base se mapea a
+su regla (`POR_CONSTRAINT`) y lo que no figura cae en `dato_invalido` con el nombre de la restricción.
+Manejadores globales: violaciones de Postgres → 422/409 con la regla; datos viejos que el modelo ya no
+acepta → 422 con los campos; cualquier otra excepción → 500 `error_interno` **con cabeceras CORS** y una
+`referencia` que también está en el log. Regla del equipo: **al agregar un constraint o una validación
+nueva, se agrega su regla.** El texto de cada regla se edita en Configuración → «Mensajes de error»
+(capacidad `config.editar`, auditado); el código y el status no.
 
 Base de implementación:
 se reutiliza la de almacenero (nginx sin privilegios, Alpine.js, API en `/v1/admin`, login con
