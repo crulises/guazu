@@ -98,5 +98,9 @@ modifiques desde acá. Ver `docs/02-spec-tecnico.md` §Reutilización.
 - Idioma de docs y nombres de dominio: español. Código y API: según lo decida el
   Doc 2.
 - API versionada `/v1`.
+- **Ramas**: prefijo obligatorio `feat/`, `fix/`, `chore/` o `docs/`, y una descripción corta en
+  minúsculas con guiones (`feat/esqueleto-del-repo`). No va «corte N» en el nombre. Cuando haya
+  un issue en GitHub, el nombre lleva su número: `feat/<issue>-<descripcion>` (por ejemplo
+  `feat/12-alta-por-escaneo`). El formato con issues **está por afinar**. Un PR por rama, a `main`.
 - Secrets en `.env` (nunca commitear) + `.env.example`.
 - CI solo llama a targets del Makefile.
