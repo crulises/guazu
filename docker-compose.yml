@@ -1,0 +1,25 @@
+# Backend de guazu. Postgres/Auth/Storage los levanta el Supabase CLI (`make up`).
+# Nombre fijo y puertos propios: guazu y almacenero conviven en la misma Mac (almacenero usa
+# 8000/8080 y 54321+). Con un solo proyecto, `make up` desde cualquier carpeta REEMPLAZA los
+# contenedores en vez de chocar (Doc 3 §Docker).
+name: guazu
+
+services:
+  backend:
+    build:
+      context: ./backend
+      args:
+        APP_VERSION: ${APP_VERSION:-0.0.0-dev}
+        APP_COMMIT: ${APP_COMMIT:-local}
+        APP_BUILT_AT: ${APP_BUILT_AT:-}
+    env_file: .env
+    environment:
+      # Desde el contenedor, el Postgres del CLI está en el host.
+      DATABASE_URL: postgresql://postgres:postgres@host.docker.internal:55322/postgres
+      AUTH_URL: http://host.docker.internal:55321/auth/v1
+      JWKS_URL: http://host.docker.internal:55321/auth/v1/.well-known/jwks.json
+      PORT: "8100"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8100:8100"

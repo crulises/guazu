@@ -2,8 +2,8 @@
 
 Guía para agentes (Claude Code) que trabajan en este repositorio.
 
-> Estado: **fase de documentación** (setup del entorno por empezar). Todavía no hay código. No escribas código
-> hasta que el usuario lo pida.
+> Estado: esqueleto del repo hecho (PR 1); el trabajo sigue por tickets de GitHub, uno por hito del
+> plan (`docs/08-plan-v0.1.0.md`). No arranques un hito sin que el usuario lo pida.
 
 ## Alcance de la v0.1
 
@@ -42,9 +42,10 @@ Antes de escribir código, leé:
 - `docs/02-spec-tecnico.md` — arquitectura, stack y decisiones técnicas.
 - `docs/04-preguntas-y-decisiones.md` — qué está decidido y qué sigue abierto.
 - `docs/05-futuros-features.md` — lo hablado y **pospuesto**. No lo implementes.
-- `docs/08-plan-v0.1.md` — cortes de la v0.1 y qué significa "hecho".
+- `docs/08-plan-v0.1.0.md` — cortes de la release 0.1.0 y qué significa "hecho".
 - `docs/07-catalogo.md` — catálogo global (SEPA + OFF) y capa por negocio.
 - `docs/06-setup-entorno.md` — armar el entorno desde cero y targets del Makefile.
+- `docs/10-estandares-de-carga.md` — qué se le pide a quien carga un producto y cómo se corrige.
 - `docs/09-heredado-de-almacenero.md` — qué se copia de almacenero, de dónde y cuándo.
 - `docs/investigacion-pasarelas.md` — pasarelas de pago y push (referencia).
 - `docs/costos.md` — todo lo que implica pagar algo.
@@ -87,7 +88,10 @@ modifiques desde acá. Ver `docs/02-spec-tecnico.md` §Reutilización.
 
 ## Convenciones
 
-- **Nada de emojis**, ni en la interfaz ni en docs: solo iconos. La ayuda se muestra
+- **Nada de emojis ni de rayas largas (em dash)**, en ningún lado: interfaz, docs, código, commits,
+  issues, PR y mensajes. Solo iconos en la interfaz. Para separar ideas usá coma, punto, dos puntos
+  o paréntesis. Esto incluye la línea de atribución de los PR: va en texto plano, sin emoji. Lo que
+  ya existe en el repo no se reescribe a propósito: se corrige solo cuando se toca esa línea. La ayuda se muestra
   con un icono (`?`, `i`, libro abierto o nota) y sus textos viven en
   `app/apps/<app>/docs/`.
 - **Ningún texto fijo en código**: todo por `.arb` (i18n). El dinero va en centavos enteros.
@@ -97,5 +101,13 @@ modifiques desde acá. Ver `docs/02-spec-tecnico.md` §Reutilización.
 - Idioma de docs y nombres de dominio: español. Código y API: según lo decida el
   Doc 2.
 - API versionada `/v1`.
+- **Ramas**: prefijo obligatorio `feat/`, `fix/`, `chore/` o `docs/`, y una descripción corta en
+  minúsculas con guiones (`feat/esqueleto-del-repo`). No va «corte N» en el nombre. Cuando haya
+  un issue en GitHub, el nombre lleva su número: `feat/<issue>-<descripcion>` (por ejemplo
+  `feat/12-alta-por-escaneo`). El formato con issues **está por afinar**. Un PR por rama, a `main`, con `Closes #<issue>` en la
+  descripción.
+- **Tickets**: cada hito del plan es un issue de GitHub, con el label de su tipo (`feat`, `fix`,
+  `chore`, `docs`, los mismos prefijos de las ramas). El issue lleva qué se hace, de qué depende y
+  cuándo está hecho; la fuente de verdad del alcance sigue siendo el plan.
 - Secrets en `.env` (nunca commitear) + `.env.example`.
 - CI solo llama a targets del Makefile.

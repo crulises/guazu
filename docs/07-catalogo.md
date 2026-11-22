@@ -2,8 +2,8 @@
 
 Cómo se arma y mantiene el catálogo de EAN. Parte de lo que ya se investigó, midió y
 decidió en `almacenero` (corte 7; su `docs/05-fuentes-catalogo.md`, **ya mergeado en `main`**) más el
-trabajo de calidad y normalización posterior (cortes 13 y 14, PR #20 y #21 todavía abiertos
-al 2026-11-21; ver §Calidad). Las cifras son de allá, medidas el 2026-11-16 y 2026-11-21. El
+trabajo de calidad, normalización y moderación posterior (cortes 13 a 16, PR #20 a #26, **todos
+mergeados al 2026-11-22**; ver §Calidad). Las cifras son de allá, medidas el 2026-11-16 y 2026-11-21. El
 código se **copia** (D9); qué y de dónde: `09-heredado-de-almacenero.md`.
 
 ## Lo que se hereda tal cual
@@ -119,11 +119,81 @@ Medido sobre 134 505 productos: sin tamaño 61,1 % → 48,8 %; `completo` 53,1 %
 - Un solo normalizador para todos los negocios; la versión se guarda por fila para poder
   re-normalizar sin perder trazabilidad.
 
-### Planeado en almacenero (cortes 15 a 18), a seguir
+### Reglas del normalizador que importan acá (resumen; detalle en `almacenero/docs/07`)
 
-Moderador y cola de sugerencias, ficha normalizada, CSV curado (`catalogo_curado_v1`, tabla
-`catalogo_lotes`, fuente `curado`) y ETL ejecutable desde el panel (`etl_ejecuciones`, workers
-`web` y `local`). Cuando se mergeen, se evalúa traerlos (Doc 9).
+- **No inventa.** Solo quita, reordena, capitaliza y expande lo que está en un diccionario; una
+  marca se corrige solo si está en el lookup. Lo que no puede resolver queda `dudoso`, no se adivina.
+- **Lo que decide una persona gana.** Un producto `manual` o con algún campo bloqueado **nunca se
+  descarta** y el normalizador no pisa lo que ya estaba cargado; solo completa campos vacíos.
+- **Ficha:** nombre limpio arriba (sin marca, tamaño ni envase) y debajo «marca · tamaño ·
+  presentación · pack de N». Campos: `pack_cantidad` (> 1; «pack de 1» es «sin pack») y `presentacion`
+  (envase en minúscula del diccionario).
+- **Descarte duro** (`descartado`): nombre inservible (sin letras, fecha o `VENC`, < 2 caracteres
+  útiles) o muy incompleto (sin marca real, sin tamaño y de ≤ 2 palabras). Alrededor del 4 %.
+  Reversible: el umbral es una constante versionada con el normalizador.
+- **El campo de tamaño de SEPA miente**: coma corrida, `1 g` imposible; gana el nombre si difiere por
+  una potencia de diez o el campo es ≤ 1 g/ml.
+- **Marca de SEPA a veces es el fabricante** (`S.A.`, `S.R.L.`): va a `fabricante` en el dato crudo y
+  se busca la marca en el nombre. `marcas_prioritarias.txt` manda sobre una marca de la fuente que no
+  está en el diccionario.
+- **Abreviaturas** en tres grupos: inequívocas (siempre), contextuales (solo con palabras que las
+  desambiguan) y ambiguas (nunca; si quedan, `abreviado` = `dudoso`). Casos de SEPA agregados con el
+  dueño: `Gat.450ml`, `Gat.500` = 500 ml, `c/lav`, `d/p`.
+- **Límite conocido:** si la marca es una palabra del nombre y queda una sola («Cif Antibacterial»),
+  el nombre no se achica; esos casos se corrigen a mano desde el panel.
+- **Estándares de carga** (Doc 10): lo que alguien carga fuera de estándar se limpia con el mismo
+  normalizador, completando vacíos, y se le avisa por qué.
+- **Idempotencia y rendimiento**: `normalizar(normalizar(x)) == normalizar(x)` se prueba; las
+  funciones que corren millones de veces no arman estructuras desde el diccionario global (`lru_cache`).
+
+### Quién corrige qué (acá no hay karma)
+
+En almacenero cualquiera cargaba y el moderador sugería. Acá el dato lo carga el comercio, así que el
+modelo de corrección se adapta:
+
+| Quién | Qué puede hacer sobre el catálogo |
+|-------|-----------------------------------|
+| **Negocio** (dueño, cajero) | Corregir su **capa** (`productos`): nombre, foto, categoría. Nunca el catálogo global. Si da de alta algo que no existe, queda privado; con `compartible` lo propone. |
+| **Moderador de plataforma** | Ver y **proponer** correcciones y altas al catálogo global (cola de sugerencias); ver Revisiones. No entra a configuración ni a ETL. |
+| **Admin de plataforma** | Aplicar directo (alta simple y corrección por EAN, que se **bloquea contra el ETL**), aprobar o rechazar sugerencias (con nota), resolver conflictos, desbloquear campos. |
+| **Superadmin** | Todo, solo para pruebas y último recurso (D54). |
+
+- Lo tocan los tres por **un solo camino de escritura** (`services/catalogo.py`): bloquea campos,
+  recalcula calidad y audita igual. Aprobar una sugerencia usa el mismo camino que la corrección
+  directa, en una transacción.
+- Una persona **no aprueba lo propio** (D54): el backend lo impide por código.
+- Los endpoints piden una **capacidad** (`catalogo.sugerir`, `catalogo.sugerencias.resolver`,
+  `catalogo.crear`, `catalogo.editar`), no un rol (Doc 2 §Roles y permisos).
+- Una sugerencia nueva reemplaza la pendiente anterior del mismo autor para ese EAN. Un EAN
+  descartado también se sugiere como corrección.
+
+### Cortes 17 y 18 de almacenero (CSV curado y ETL desde el panel)
+
+Siguen **sin mergear** al 2026-11-22. Cuando lleguen se evalúa traerlos (Doc 9 §Cortes 17 y 18); no
+bloquean la release 0.1.0.
+
+## Atribuciones y pantalla «Acerca de»
+
+Las licencias obligan a **nombrar la fuente** en la interfaz. Es una pantalla de texto, sin trámite,
+y va en **las dos apps**. Textos literales de almacenero (`acerca_screen.dart`, `fuentesDatos`), con
+«Guazú» en lugar de «Almacenero»; si cambia un texto, se cambia en el doc y en el `.arb`, y un test
+compara la pantalla contra esa lista.
+
+- **Open Food Facts** (ODbL 1.0; contenidos DbCL 1.0; imágenes CC BY-SA 3.0): «Datos de productos:
+  Open Food Facts (openfoodfacts.org)… Guazú solo enlaza las imágenes». Enlaces a la licencia y a los
+  términos de uso.
+- **SEPA · Precios Claros** (CC BY 4.0): «Secretaría de Comercio de la Nación, SEPA… Los datos fueron
+  normalizados y combinados por Guazú». Los **precios de SEPA no se cargan**.
+- **No aplica acá:** OpenStreetMap ni el mapa (los negocios son clientes del servicio).
+- **Contenido de «Acerca de»**: nombre y versión de la app, tarjeta de diagnóstico (versión y commit,
+  hora de compilación, URL del servidor, estado de `/v1/salud` con la demora o el motivo, **versión
+  del backend**, IP del dispositivo por interfaz), las fuentes de datos con su licencia y enlaces, un
+  aviso de que **los precios son los que carga cada comercio**, y el botón de licencias de librerías
+  (`showLicensePage`).
+- Siempre accesible, **también sin conexión**: el icono vive en la barra del inicio aunque falle
+  la carga inicial.
+- **Android 11+**: declarar el intent `VIEW https` en `<queries>` del manifest para `url_launcher`;
+  si falta, tocar un enlace no hace nada (Doc 3).
 
 ## Imágenes: un hueco real
 

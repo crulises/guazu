@@ -291,6 +291,42 @@ El paso a paso para armar la máquina está en `06-setup-entorno.md`.
   un backend falso sin red.
 - La lista es perezosa: en el test hay que agrandar la pantalla para que construya las filas.
 
+### Rol moderador, sugerencias y panel (heredado de los cortes 15 y 16) **[heredado]**
+- **«Failed to fetch» en el panel con el backend sano.** Causa: un 500 sin cabeceras CORS (salía de
+  `ServerErrorMiddleware`, por fuera del CORS) que el navegador muestra así; en el caso real, un
+  `pack_cantidad: 1` contra `pack_cantidad > 1`. Solución: errores que explican la regla (Doc 2 §Panel)
+  y «pack de 1» se guarda como «sin pack». Ante un «Failed to fetch»: `docker compose logs backend`.
+- **`auditoria` rechaza una entidad nueva** (`..._entidad_check`): la lista es cerrada; cada entidad
+  nueva amplía el `check` en su migración (`drop constraint` + `add constraint`).
+- **`x-show` de Alpine evalúa sus expresiones aunque oculte el bloque**: con datos que pueden ser
+  `null` usar `<template x-if>` o `?.`. En un handler, leer lo que haga falta de la ficha **antes**
+  de cerrarla. El `Error` del front debe llevar `status` y `detalle` para reaccionar a un 409.
+- **Panel de prueba en otro puerto → «No puedo conectar»:** CORS; levantar con
+  `CORS_ORIGINS=http://localhost:<puerto>`.
+- **Tests de correcciones con nombre fijo dan 409 a veces:** una corrida que falló dejó basura; nombres
+  con sufijo aleatorio y limpiar las filas hijas antes de borrar.
+- **Un moderador no entra al panel de configuración:** propone desde la app y aprueba el admin; las
+  capacidades (no los roles) lo deciden.
+- **Android 11+: tocar un enlace de «Acerca de» no hace nada** si falta el intent `VIEW https` en
+  `<queries>` del manifest (`url_launcher`).
+- **El normalizador no era idempotente** con casos reales (`oBLEAS`, dos sufijos de SEPA, la marca
+  repetida): los motivos que salen de comparar con el crudo (`tamano_en_conflicto`, `abreviado`)
+  viajan con la fila (`_PEGAJOSOS`).
+
+### Corte 0: lo que pasó al armar el esqueleto (2026-11-22) **[guazu]**
+- **Flutter 3.50 usa `material_ui`** (`package:material_ui/material_ui.dart`), no `flutter/material.dart`. Los
+  delegados de localización también cambiaron: usar `...GlobalMaterialLocalizations.delegates` (plural, incluye
+  Cupertino); `GlobalMaterialLocalizations.delegate` y `GlobalCupertinoLocalizations` están deprecados. El código
+  que genera `gen-l10n` los usa igual: se excluye del análisis en `app/analysis_options.yaml`.
+- **Workspace de Dart:** cada paquete lleva `resolution: workspace`; los `pubspec.lock` y `.iml` sueltos de
+  `flutter create` se borran. Una `description:` con dos puntos hay que ponerla entre comillas.
+- **Tests de widgets:** corren con idioma inglés por defecto; fijar `localesTestValue = [Locale('es')]`. Una lista
+  perezosa solo construye lo visible: agrandar la pantalla (`tester.view.physicalSize`).
+- **`flutter build apk`** instala solo las Build-Tools 36.0.0 la primera vez (además de las 35.0.0 y 28.0.3 del Doc 6)
+  y baja artefactos de Android: el primer build tarda varios minutos.
+- **Shell no interactiva:** `~/.zshrc` no se carga; para correr `make` desde un script usar `zsh -ic '...'`.
+- **`tool/version.sh`** con un contador vacío (no inexistente) falla por `set -e`; el script lo crea solo.
+
 ### Casos de prueba de dinero e impuestos **[guazu]**
 - Los casos del cálculo de precio y de la conversión Monotributo ↔ RI se **fijan como datos**
   (entrada → salida exacta) y los valida el contador (`validar-profesional/contador.md`).
@@ -655,7 +691,23 @@ El paso a paso para armar la máquina está en `06-setup-entorno.md`.
 
 ## Específicos de guazu
 
-*(Todavía vacío: se llena desde el corte 0, con fecha.)*
+### Setup de la Mac nueva (2026-11-22) **[guazu]**
+- Mac Apple Silicon, macOS 27.2, 36 GB de RAM, Xcode 27.2 ya instalado. Guion de `06-setup-entorno.md`
+  seguido sin cambios; todo bajó sin cortes.
+- **Flutter 3.50.0 desde git** (`git clone --depth 1 --branch 3.50.0`) en `~/development/flutter`. `flutter doctor`
+  marca `[!] Flutter` por «unknown channel» (`[user-branch]`): es esperable con un clon por tag, no es un error.
+- **Chrome** en rojo en `flutter doctor`: la web está fuera de alcance.
+- `avdmanager create avd` imprime el error de `devices.xml` y crea el AVD igual (ya conocido).
+- **Docker Desktop** arrancó con ~7,7 GB: subirlo a >= 8 GB (Settings > Resources) antes del primer `make up`. El
+  comando `docker` no está en el PATH hasta que Docker Desktop termina de configurarse; sirve
+  `/Applications/Docker.app/Contents/Resources/bin/docker`.
+- `brew install supabase/tap/supabase` trae la **3.2.0**, pero el CI fija la **3.1.0**. Solución aplicada: `brew uninstall
+  supabase` y copiar a `/opt/homebrew/bin/supabase` el binario de `supabase_3.1.0_darwin_arm64.tar.gz` del release
+  de GitHub (sha256 verificado contra `checksums.txt`). Ya no lo gestiona brew, así que no se actualiza solo.
+- **Docker fuera del PATH:** se agregó `/Applications/Docker.app/Contents/Resources/bin` al PATH en `~/.zshrc`
+  (sin sudo). En esta versión de Docker Desktop la memoria se cambia en Settings > VM resources (quedó en 16 GB).
+- `libpq` de brew es la 19 (el doc mencionaba la 17): sirve, `pg_dump` solo debe ser >= al servidor.
+- El `git config` global usó el email personal, no el noreply de GitHub: ajustar por repo.
 
 ---
 

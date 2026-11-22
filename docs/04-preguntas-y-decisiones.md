@@ -78,6 +78,12 @@ pospuesto vive en `05-futuros-features.md`.
 | D53 | Un producto `descartado` **sí se puede dar de alta** en un negocio. El admin de plataforma puede verlo y **proponerlo al catálogo global**, ajustándolo antes, **solo si el negocio autorizó compartirlo**. | Decidido 2026-11-21. Doc 7 §Calidad y Doc 2 §Panel. |
 | D54 | **Un admin puede ser también cliente, pero no valida lo suyo** (separación de funciones). Existe un **superadmin** solo para pruebas y último recurso: pocas cuentas, apagado por configuración en producción, y todo lo que hace queda en auditoría. | Decidido 2026-11-21. Doc 2 §Roles. |
 
+| D55 | El endpoint de salud se llama **`/v1/salud`** y devuelve versión del backend, commit y hora de compilación. | Decidido 2026-11-22. Lo usa «Acerca de» (Doc 2 §Versionado). |
+| D56 | **`0.0.x` es el número de cada compilación; `0.1.0` es la primera release** y da nombre al plan (`08-plan-v0.1.0.md`). | Decidido 2026-11-22. |
+| D57 | **Los endpoints piden capacidades, no roles**; el catálogo se corrige por **un solo camino de escritura** (corrección directa, alta simple y sugerencia aprobada). Lo cargado por una persona se bloquea contra el ETL y nunca se descarta. | Heredado de almacenero (cortes 15 y 16, mergeados). Doc 2 §Roles, Doc 7 §Calidad. |
+| D58 | **Errores que explican la regla** y **estándares de carga** desde el corte 0 y el 2c. Al agregar un constraint o validación, se agrega su regla. | Heredado. Doc 2 §Panel, Doc 10. |
+| D59 | La pantalla **«Acerca de»** con atribuciones nace en el corte 0 y es accesible sin conexión. | Heredado de almacenero. Doc 7 §Atribuciones. |
+
 ## Abiertas
 
 | # | Pregunta | Contexto | Estado |

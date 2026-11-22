@@ -1,0 +1,29 @@
+name: CI
+
+# Solo llama a targets del Makefile (CLAUDE.md). Versiones fijadas igual que en desarrollo.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.50.0"
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.1.0  # misma versión que en desarrollo local; al subirla, subir las dos
+      - run: make up
+      - run: make lint
+      - run: make test

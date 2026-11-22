@@ -1,4 +1,8 @@
-# Doc 8 — Plan de la v0.1
+# Doc 8 — Plan de la release 0.1.0
+
+Versiones: cada compilación de prueba sube el último número de la serie `0.0.x`
+(`0.0.1`, `0.0.2`, …, Doc 2 §Versionado); **`0.1.0`** es la primera release, la que cierra este
+plan (tag `v0.1.0`). En el resto de los docs, «v0.1» es el nombre corto de este alcance.
 
 Estado: **propuesta para aprobar**. Ante una duda de comportamiento gana el Doc 1; ante
 una duda técnica, el Doc 2. Este plan solo ordena el trabajo.
@@ -12,6 +16,25 @@ negocio y una sola persona con todos los roles.
 
 Dentro: Doc 1 §Etapas, fila 0.1. Fuera: POS, caja, pedidos, fiado, pagos, delivery, grupos
 familiares, facturación, push, email, iOS publicado (el código sí queda listo).
+
+## Tickets
+
+Cada hito es un issue de GitHub (la fuente de verdad del alcance sigue siendo este documento). Las ramas
+y los PR los referencian: `feat/<issue>-<descripcion>` y `Closes #<issue>`.
+
+| Hito | Issue |
+|------|-------|
+| 0 Esqueleto del repo y entorno | #2 |
+| 1 Identidad, negocio, permisos y auditoría | #3 |
+| 2a ETL base | #4 |
+| 2b Búsqueda por EAN | #5 |
+| 2c Normalizador y calidad | #6 |
+| 2d Corrección de la plataforma y sugerencias | #7 |
+| 3 Productos, costos, impuestos y precio | #8 |
+| 4 Stock | #9 |
+| 5 Operaciones en lote | #10 |
+| 6 Escáner del cliente | #11 |
+| 7 Despliegue de pruebas cerradas | #12 |
 
 ## Reglas de cada corte
 
@@ -55,7 +78,14 @@ cerrado el 3.
   `apk-negocio`, `apk`, `doctor`, `setup` (copiando de almacenero lo relevante).
 - CI en GitHub Actions que solo llama al Makefile.
 - Backend FastAPI mínimo con `/v1/salud` y la capa `db` genérica; migración inicial vacía.
-- Cada app muestra una pantalla en blanco con el idioma y la ayuda funcionando.
+- Cada app muestra una pantalla en blanco con el idioma y la ayuda funcionando, y una pantalla
+  **«Acerca de»** (versión, commit, hora de compilación, servidor, estado y versión del backend vía
+  `/v1/salud`, IP del dispositivo, licencias de librerías) accesible aunque no haya conexión. Las
+  atribuciones de datos («Datos y licencias») se completan en el corte 6, pero la pantalla nace acá
+  (Doc 2 §Versionado, Doc 7 §Atribuciones).
+- **Errores que explican la regla** desde el día uno: `services/reglas.py` y manejadores globales
+  en `errores.py` (nunca un 500 mudo; el 500 sale con cabeceras CORS y una `referencia`).
+- `tool/version.sh` con un contador por app y `make apk-*` que lo usa.
 - **Hecho cuando**: `make doctor && make up && make test` pasa en una máquina limpia y
   las dos apps se compilan para Android y para el simulador de iOS.
 
@@ -67,7 +97,14 @@ cerrado el 3.
 - Auth anónima + email y contraseña; Google queda cableado pero apagado, como en
   almacenero. Backend valida el JWT por JWKS. Vinculación anónimo → cuenta.
 - Catálogo de permisos en código; roles de fábrica `dueno`, `moderador`, `cajero`;
-  `exigir(permiso, sucursal)`. Ámbito de **plataforma**.
+  `exigir(permiso, sucursal)`. Ámbito de **plataforma** con sus roles `admin`, `moderador` y
+  `superadmin` (D54) y sus capacidades (Doc 2 §Roles y permisos): los endpoints piden una
+  **capacidad**, nunca un rol.
+- Salvaguardas heredadas del panel de almacenero: **nadie cambia su propio rol**, un admin de
+  plataforma tiene que estar **registrado** (un anónimo no entra al panel), el cambio de rol pasa por
+  la API de administración, queda auditado y el trigger exige habilitar la escritura en la
+  transacción. La entidad auditable es una lista cerrada en un `check`: cada entidad nueva la amplía
+  en su migración.
 - Aislamiento por negocio: filtro en cada consulta y RLS con variable propia
   (`app.negocio_id`) como defensa en profundidad. **Prueba**: un negocio nunca ve los
   datos de otro.
@@ -93,15 +130,31 @@ cerrado el 3.
   administración de conflictos para el ámbito de plataforma.
 - **Hecho cuando**: buscar un EAN responde en milisegundos, con 8, 12, 13 y 14 dígitos.
 
-**2c: Normalizador y calidad** (copiar desde las ramas de los PR #20 y #21 de almacenero,
-anotando el hash en el Doc 9).
-- Normalizador, diccionarios en CSV, columnas y estados de calidad, `make catalogo-calidad` y
-  `make catalogo-renormalizar`, `services/calidad.py` con su prueba de paridad.
+**2c: Normalizador y calidad** (copiar de `main` de almacenero, ya mergeados los PR #20, #21 y #22;
+anotar el hash en el Doc 9).
+- Normalizador, diccionarios en CSV (incluido `marcas_prioritarias.txt` y los casos de SEPA de
+  limpieza: gatillo, doypack, aerosol, `c/lav`), columnas y estados de calidad, `make
+  catalogo-calidad` y `make catalogo-renormalizar`, `services/calidad.py` con su prueba de paridad.
+- **Estándares de carga** (`services/estandares.py`, `GET /v1/ayuda/estandares`, Doc 10): lo que una
+  persona carga fuera de estándar se limpia y completa **sin pisar nada cargado**, y se le avisa.
 - **Hecho cuando**: la re-normalización repetida da «Cambiarían: 0» y las cifras de calidad
   se parecen a las de almacenero (Doc 7 §Calidad).
 
-**2d (posterior al release de almacenero):** cola de sugerencias, CSV curado y ETL desde el
-panel, si el otro proyecto los mergea (Doc 7).
+**2d: Corrección de la plataforma y sugerencias** (ya mergeado en almacenero, corte 15).
+- Un solo camino de escritura (`services/catalogo.py`: `aplicar` y `crear`) para la corrección
+  directa, el alta simple y la aprobación de una sugerencia: los tres bloquean contra el ETL,
+  recalculan la calidad y auditan igual.
+- Tabla de sugerencias (una pendiente por producto y autor; aprobar aplica por el camino único,
+  rechazar exige nota) y panel de plataforma: **Alta / corrección por EAN**, cola de
+  **Sugerencias** con globito, fichas por entidad.
+- Un producto `manual` o con campos bloqueados **nunca se descarta**.
+- **Hecho cuando**: una corrección de la plataforma o una sugerencia aprobada queda bloqueada contra el
+  ETL, auditada, y una segunda corrida del ETL no la pisa.
+
+**2e (posterior):** CSV curado (`catalogo_curado_v1`, `catalogo_lotes`) y ETL desde el panel
+(`etl_ejecuciones`, worker `web` y `local`): son los cortes 17 y 18 de almacenero, todavía **sin
+mergear** al 2026-11-22. No bloquean la release 0.1.0: la carga se corre desde la Mac con
+`DATABASE_URL` remoto.
 
 ### Corte 3: Productos, costos, impuestos y precio
 
@@ -183,9 +236,9 @@ panel, si el otro proyecto los mergea (Doc 7).
 
 ## Riesgos
 
-- **Los PR #19, #20 y #21 de almacenero siguen abiertos** (release, normalizador, calidad):
-  si cambian, hay que copiar la versión final. Mitigación: copiar desde la rama anotando el
-  hash (Doc 9) y rever la diferencia al mergear.
+- **Los PR #19 a #26 de almacenero ya están en `main`** (2026-11-22); lo que sigue en movimiento
+  son los cortes 17 y 18 (CSV curado y ETL desde el panel). Mitigación: copiar de `main`
+  anotando el hash (Doc 9) y rever la diferencia antes de cada corte.
 - **Cálculo de impuestos sin validar**: las reglas fiscales son **datos editables, no código**
   (tablas con vigencia, Doc 2 §Impuestos), así que lo que diga el contador se cambia sin tocar
   la estructura. Queda marcado «sin validar» hasta que responda.

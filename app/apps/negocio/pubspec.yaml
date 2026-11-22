@@ -1,0 +1,31 @@
+name: negocio
+description: "App Negocio de Guazú: inventario, precios y caja."
+publish_to: none
+# Serie 0.0: cada compilación de prueba sube el último número (tool/version.sh). 0.1.0 = primera release.
+version: 0.0.0+1
+resolution: workspace
+environment:
+  sdk: ^3.14.0
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  material_ui: ^1.1.0
+  url_launcher: ^6.3.0
+  guazu_core:
+    path: ../../packages/core
+  guazu_ui_kit:
+    path: ../../packages/ui_kit
+  guazu_scanner:
+    path: ../../packages/scanner
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+flutter:
+  generate: true
+  uses-material-design: true
+  assets:
+    - docs/ayuda/
