@@ -1,9 +1,10 @@
 # Doc 7 — Catálogo de productos
 
 Cómo se arma y mantiene el catálogo de EAN. Parte de lo que ya se investigó, midió y
-decidió en `almacenero` (corte 7; su `docs/05-fuentes-catalogo.md`, en la rama
-`claude/etl-fuentes-4c7b8d`, PR abierto a la fecha). Las cifras son de allá, medidas el
-2026-11-16. El código del ETL se **copia** cuando ese PR esté mergeado (D9).
+decidió en `almacenero` (corte 7; su `docs/05-fuentes-catalogo.md`, **ya mergeado en `main`**) más el
+trabajo de calidad y normalización posterior (cortes 13 y 14, PR #20 y #21 todavía abiertos
+al 2026-11-21; ver §Calidad). Las cifras son de allá, medidas el 2026-11-16 y 2026-11-21. El
+código se **copia** (D9); qué y de dónde: `09-heredado-de-almacenero.md`.
 
 ## Lo que se hereda tal cual
 
@@ -76,6 +77,63 @@ productos         (por negocio)
 - El precio nunca sale del catálogo: lo define cada negocio (Doc 2 §Precio).
 - La base propia de esta instancia ocupa ~75 MB de catálogo; está lejos del tope del plan
   gratuito de Supabase (500 MB, por verificar).
+
+## Calidad y normalización (heredado de los cortes 13 y 14)
+
+El catálogo crudo de SEPA y OFF viene sucio: marcas pegadas al nombre, abreviaturas, tamaños
+que mienten. Almacenero lo resolvió con un **normalizador determinista y versionado** más
+**estados de calidad** guardados en la base. Se hereda completo.
+
+- **Normalizador** (`etl/comun/normalizar.py`, con `NORMALIZADOR_VERSION`): limpia nombre y
+  marca, expande abreviaturas, extrae tamaño y presentación (`pack_cantidad`, `presentacion`).
+  Es **idempotente**: normalizar dos veces da lo mismo (se prueba). Sin IA ni red: mismo
+  resultado siempre.
+- **Diccionarios como datos** en `etl/comun/datos/`: `marcas.csv`, `abreviaturas.csv`,
+  `abreviaturas_contexto.csv`, `ambiguas.txt`, `envases.csv`. Se corrigen editando un CSV, sin
+  tocar código. Es la parte «manual» de la mejora continua.
+- **Columnas** en el catálogo: `calidad`, `estado_calidad`, `calidad_motivos`,
+  `normalizador_version`. Estados: `completo`, `parcial`, `dudoso`, `descartado`.
+- **Qué hace el campo de tamaño de SEPA**: si difiere del nombre por una potencia de diez, gana
+  el nombre; el resto queda `dudoso` (detalle en Doc 3 §Normalizador).
+- **Targets**: `make catalogo-calidad` (informe) y `make catalogo-renormalizar [APLICAR=1]`
+  (sin `APLICAR` solo muestra qué cambiaría; la segunda corrida debe dar 0 cambios).
+- **Backend**: `services/calidad.py` calcula el estado y tiene una prueba de **paridad** con
+  el ETL (los dos deben coincidir).
+- **Panel de plataforma**: tablero de calidad.
+
+Medido sobre 134 505 productos: sin tamaño 61,1 % → 48,8 %; `completo` 53,1 %, `parcial`
+40,5 %, `dudoso` 2,0 %, `descartado` 4,3 %.
+
+### Qué cambia para guazu
+
+- **`descartado` no debe bloquear al negocio.** En almacenero un producto descartado se oculta
+  de la búsqueda (decisión de su dueño, reversible). Acá el negocio **escanea su mercadería real**:
+  si el EAN está `descartado`, el alta igual debe ofrecer el dato disponible y dejar que el
+  negocio lo complete en su capa (`productos`); lo descartado solo se oculta de **búsquedas por
+  nombre** y de sugerencias. **[SUPUESTO]**, confirmar en el corte 2.
+- **Lo que el negocio corrige** va a su capa y, como idea futura, a una **cola de
+  sugerencias** para la plataforma (ver Doc 5).
+- El **estado de calidad se muestra solo en el panel de plataforma**, no a clientes.
+- Un solo normalizador para todos los negocios; la versión se guarda por fila para poder
+  re-normalizar sin perder trazabilidad.
+
+### Planeado en almacenero (cortes 15 a 18), a seguir
+
+Moderador y cola de sugerencias, ficha normalizada, CSV curado (`catalogo_curado_v1`, tabla
+`catalogo_lotes`, fuente `curado`) y ETL ejecutable desde el panel (`etl_ejecuciones`, workers
+`web` y `local`). Cuando se mergeen, se evalúa traerlos (Doc 9).
+
+## Imágenes: un hueco real
+
+**SEPA no trae imágenes**: 74 024 de 78 025 productos no tienen; en todo el catálogo, el 68,6 %
+no tiene imagen. El escáner del cliente muestra imagen, así que:
+
+1. Imagen de reemplazo (icono genérico por categoría, sin texto fijo) cuando no hay.
+2. Foto propia del negocio al dar de alta (opcional), con metadatos extraídos antes de
+   recomprimir (Doc 2 §Imágenes).
+3. OFF aporta enlaces a imágenes, que **se enlazan y no se copian** (licencia CC-BY-SA).
+
+Decisión abierta: Q30 en Doc 4.
 
 ## Pendiente de heredar del otro proyecto
 

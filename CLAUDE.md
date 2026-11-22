@@ -2,7 +2,7 @@
 
 Guía para agentes (Claude Code) que trabajan en este repositorio.
 
-> Estado: **fase de documentación**. Todavía no hay código. No escribas código
+> Estado: **fase de documentación** (setup del entorno por empezar). Todavía no hay código. No escribas código
 > hasta que el usuario lo pida.
 
 ## Alcance de la v0.1
@@ -40,6 +40,7 @@ Antes de escribir código, leé:
 - `docs/08-plan-v0.1.md` — cortes de la v0.1 y qué significa "hecho".
 - `docs/07-catalogo.md` — catálogo global (SEPA + OFF) y capa por negocio.
 - `docs/06-setup-entorno.md` — armar el entorno desde cero y targets del Makefile.
+- `docs/09-heredado-de-almacenero.md` — qué se copia de almacenero, de dónde y cuándo.
 - `docs/investigacion-pasarelas.md` — pasarelas de pago y push (referencia).
 - `docs/costos.md` — todo lo que implica pagar algo.
 - `docs/validar-profesional/` — preguntas para contador y abogado.
@@ -52,8 +53,9 @@ técnica, el Doc 2. Lo marcado como **[SUPUESTO]** en los docs no está confirma
 
 Además:
 
-- `docs/03-problemas-soluciones.md` — entorno y problemas ya vividos (Síntoma →
-  Causa → Solución). No es fuente de verdad.
+- `docs/03-problemas-soluciones.md` — entorno y problemas ya vividos o heredados de
+  almacenero (Síntoma → Causa → Solución). **Leelo antes de armar el entorno** y agregá
+  ahí lo que aprendas. No es fuente de verdad.
 
 ## Relación con `almacenero`
 

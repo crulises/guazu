@@ -124,6 +124,18 @@ Las fotos se capturan desde la app y los metadatos se guardan aparte (Doc 2
 | Alta de negocios y sucursales desde la app (SaaS) | preparado | Esquema listo; falta UI y facturación del servicio. |
 | **Saldo a favor emitido por un tercero** (ej. municipio) | idea | Revisar con una versión estable y validación legal. La plataforma solo registra y descuenta, sin custodiar dinero. Si no estorba, se deja una tabla de movimientos con `emisor` ya preparada. |
 
+## Catálogo y plataforma (de almacenero)
+
+- **Sugerencias de los negocios al catálogo global**: un negocio corrige un nombre o completa
+  un tamaño y lo propone; un moderador de plataforma lo revisa (cola de sugerencias, corte 15
+  de almacenero).
+- **CSV curado** de la plataforma (`catalogo_curado_v1`, fuente `curado`) y **ETL ejecutable
+  desde el panel** (cortes 17 y 18 de almacenero).
+- **Fotos de productos**: foto propia del negocio y, a futuro, foto compartida en el catálogo
+  global previa moderación, para cubrir el 68,6 % sin imagen.
+- **Veto de clientes con deuda** a nivel de plataforma, con dispositivo asociado (hash de
+  `ANDROID_ID`), si se vuelve necesario.
+
 ## Anotados sin prioridad
 
 - Productos al peso, sin EAN y genéricos: `revisar/productos-sin-ean-y-al-peso.md`.

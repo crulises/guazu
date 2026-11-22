@@ -58,8 +58,8 @@ real, TestFlight ni App Store.
 | Generar la carpeta `ios/` de cada app y compilar con `flutter build ios --simulator` | Yo, al crear los proyectos |
 
 Decidir **antes de crear los proyectos** los identificadores definitivos de cada app
-(`applicationId` en Android y *bundle id* en iOS, ej. `ar.guazu.cliente` y
-`ar.guazu.negocio`): cambiarlos después duele, y Firebase y Apple los usan.
+(`applicationId` en Android y *bundle id* en iOS; **a confirmar**, Q29 en Doc 4:
+`ar.guazu.*` o `dev.crulises.guazu.*`): cambiarlos después duele, y Firebase y Apple los usan.
 
 Esta máquina hoy tiene solo las herramientas de línea de comandos, sin Xcode, CocoaPods
 ni Node.
@@ -131,6 +131,39 @@ Cuando haya Makefile:
 - `make admin` pasa a ser un target de **dueño** (asigna rol de dueño por SQL),
   adaptado al modelo de permisos del Doc 2.
 - CI: GitHub Actions que solo llama a targets del Makefile.
+
+## Lo que aprendimos de almacenero para armar la máquina
+
+Detalle en `03-problemas-soluciones.md`. Lo esencial, antes de empezar:
+
+- **Actualizar Flutter primero** y recién después crear los proyectos (si no, `android/` sale
+  viejo y no compila).
+- `brew install gh openjdk@17 supabase/tap/supabase libpq python@3.12 flyctl`; `libpq` no queda
+  en el PATH solo: `brew link --force libpq` (o agregarlo) para tener `psql` y `pg_dump`
+  (el `pg_dump` debe ser de versión igual o mayor que el servidor).
+- **Docker Desktop con al menos 8 GB** (Preferencias > Resources); con 16 GB de RAM sobra
+  para emulador + Supabase + Gradle. Si se siente lento, `supabase start -x` para los servicios
+  que no se usan.
+- **Evitar que la Mac hiberne** durante descargas grandes (SDK, NDK, imagen del emulador) y
+  reintentar en bucle si se cortan.
+- Instalar el NDK (`ndk;28.2.13676358`) antes del primer build: Gradle se cuelga bajándolo.
+- `supabase login` y `fly auth login` los hacés vos (abren el navegador).
+- **Dos proyectos en la misma Mac**: guazu usa otros puertos y `name: guazu` en el compose
+  (Doc 3 §Docker). No levantar ambos con la misma configuración.
+- Configurar `git config user.name` y `user.email` (noreply de GitHub) **antes del primer
+  commit** en cada máquina.
+- **Compose fija `name:`** y un worktree nuevo necesita copiar `.env` y correr `make venv`.
+
+### Lista de verificación de una máquina nueva
+
+`make doctor` debe mostrar OK para: Flutter y Dart, JDK 17, Android SDK y NDK, emulador
+`guazu_pixel`, Docker corriendo, Supabase CLI, `psql`, Python 3.12, `gh` logueado, `fly` y
+(en Mac) Xcode y CocoaPods. Luego `make up && make test`.
+
+### Lo que NO viaja con el repo
+
+`.env`, `.venv`, keystore y `key.properties`, `backups/`, credenciales (`gh`, `supabase`,
+`fly`), los volcados de OFF y SEPA (se vuelven a bajar) y las sesiones de Claude.
 
 ## Qué hay que copiar a mano a la otra máquina
 

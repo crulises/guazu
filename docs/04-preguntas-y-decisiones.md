@@ -64,6 +64,14 @@ pospuesto vive en `05-futuros-features.md`.
 | D24 | Fotos: los metadatos (incluida la ubicación) se extraen **antes** de comprimir y se guardan aparte. | Evidencia de entregas; el volumen definirá cuánto rediseñar. |
 | D23 | Un adulto puede darle presupuesto a otro adulto. Los rubros se limitan solo si el responsable lo decide; el bloqueo de alcohol y tabaco es para menores. | Los grupos familiares ordenan el gasto; no se restringe a adultos. |
 | D26 | Carpetas `docs/validar-profesional/`, `docs/revisar/` (con `revisado/`) y `docs/costos.md`. | Para no perder lo que hay que consultar, volver a mirar o pagar. |
+| D42 | **Reglas fiscales como datos editables** (condición con vigencia, alícuotas, parámetros por condición), no como código. | Para adaptarse a lo que diga el contador sin cambiar la estructura. Doc 2 §Reglas fiscales como datos. |
+| D43 | **Calidad del catálogo heredada** de almacenero (normalizador versionado, diccionarios en CSV, estados `completo/parcial/dudoso/descartado`). | Ya medida sobre 134 mil productos. Doc 7 §Calidad. Un `descartado` no bloquea el alta del negocio **[SUPUESTO]**. |
+| D44 | Región de Fly.io **`gru`**; DNS en Cloudflare con CNAME en nube gris, `fly certs`, y recién después proxy con SSL Full (strict); `PROXY_HOPS` acorde. | Probado en almacenero. Doc 3 §Despliegue. |
+| D45 | Un solo nivel de subdominio: `guazu-api.crulises.dev` para la API y `guazu.crulises.dev/admin/` para el panel. | Certificados y proxy gratuito cubren un nivel. |
+| D46 | `make backup` y `make restore-test` heredados (`pg_dump` del esquema `public`, base temporal, conteos); el `.dump` se copia fuera de la máquina. | Supabase gratis no hace backups. Doc 3 §Backup. |
+| D47 | Escáner con `mobile_scanner` (`ean13`, `ean8`, `upcA`, `upcE`), validación 8 a 14 dígitos en la app, normalización solo en el backend y entrada manual de respaldo. | Ya probado en celular real en almacenero. Doc 3 §Escáner. |
+| D48 | **Panel web de plataforma** reutilizado de almacenero. | Para conflictos, calidad y ETL. Doc 2 §Panel. |
+| D49 | Guazu usa **puertos y nombre de compose propios** para convivir con almacenero en la misma Mac. | Doc 3 §Docker. |
 
 ## Abiertas
 
@@ -72,6 +80,9 @@ pospuesto vive en `05-futuros-features.md`.
 | Q27 | Condición fiscal: validar con contador. | Ver `validar-profesional/contador.md`. Antes de la etapa 0.2. | Abierta |
 | Q12 | Fiado: valores iniciales de límite, recargo y plazo. | Propuestas en Doc 5. | Abierta |
 | Q8 | Productos sin EAN y al peso. | Pospuesto: `revisar/productos-sin-ean-y-al-peso.md`. | Pospuesta |
+| Q29 | **Identificadores de las apps.** Se aprobó `ar.guazu.cliente` y `ar.guazu.negocio`, pero almacenero usa el dominio invertido que controlás (`dev.crulises.almacenero`). ¿`dev.crulises.guazu.cliente` y `.negocio`? | No se pueden cambiar tras publicar; Firebase y Apple los usan. | **Abierta, antes del corte 0** |
+| Q30 | **Imágenes de productos.** SEPA no trae; el 68,6 % del catálogo no tiene imagen. ¿Icono de reemplazo más foto propia opcional del negocio es suficiente para la v0.1? | Doc 7 §Imágenes. | Abierta, antes del corte 6 |
+| Q31 | Un producto `descartado` por calidad: ¿se puede dar de alta igual en un negocio? | Propuesta: sí (Doc 7 §Calidad). | Abierta, corte 2 |
 | Q18 | Pasarelas. | Investigación en `investigacion-pasarelas.md`; a revisar juntos. | En curso |
 
 ## Ideas a sumar

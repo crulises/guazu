@@ -13,7 +13,11 @@ cambian: revisar antes de decidir.
 | Hosting del backend (Fly.io, Render, Railway) | Gratuito/bajo | Mensual | Al desplegar | por verificar |
 | Email transaccional (ej. Resend, Amazon SES, Brevo) | Plan gratuito con límites | Mensual | Avisos, comprobantes, mora (etapa 0.2 en adelante) | por verificar |
 | Dominio `crulises.dev` | Ya comprado | Anual | API (`guazu-api.crulises.dev`) y enlaces | pagado |
-| Fly.io (backend) | Pago por uso | Mensual | Pruebas cerradas (D35) | por verificar |
+| Fly.io (backend) | Pago por uso; con `auto_stop_machines` y una máquina chica, centavos a pocos dólares por mes. **No pedir IPv4 dedicada** (se cobra aparte) | Mensual | Pruebas cerradas (D35) | por verificar al contratar (cifras de la experiencia de almacenero) |
+| Supabase plan gratuito | 500 MB de base; se **pausa tras 1 semana sin actividad**; **sin backups automáticos** | Mensual | Pruebas cerradas | por verificar al contratar |
+| Supabase plan de pago | Backups automáticos y sin pausa | Mensual | Antes del primer cliente real | por verificar |
+| Cloudflare (DNS y proxy) | Plan gratuito | — | Dominio de la API | por verificar |
+| Keystore y cuentas de tiendas | Sin costo propio, pero **perderla impide actualizar la app** | — | Antes de publicar | — |
 | Mercado Pago, comisión de procesamiento | No publicada en la documentación para desarrolladores | Por transacción | Etapa 0.6; la paga el comercio | por verificar |
 | QR interoperable (Transferencias 3.0) | 6 a 8 por mil + IVA según el BCRA | Por transacción | Cobro por QR; lo paga el comercio | verificado (fuente BCRA, sin leer el reglamento) |
 | Contador (consulta) | Honorarios | Por consulta | Antes de la etapa 0.2 | — |

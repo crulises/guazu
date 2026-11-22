@@ -43,7 +43,7 @@ app/
   dependen de las apps, nunca al revés.
 - Cada app genera su APK: `cd app/apps/cliente && flutter build apk`
   (y lo mismo en `negocio`). Un target del Makefile arma ambos (`make apk`).
-- Distinto `applicationId` por app (ej. `ar.guazu.cliente`, `ar.guazu.negocio`).
+- Distinto `applicationId` por app (a confirmar, Q29: `ar.guazu.*` o `dev.crulises.guazu.*`).
 - El backend es el único que decide qué dato se devuelve según credenciales y
   permisos. Ocultar pantallas en el cliente es solo UX, nunca seguridad.
 
@@ -327,6 +327,36 @@ Proyectos independientes (D9). Reutilización solo por copia: auth anónima y
 `linkIdentity`, escaneo EAN, ETL de Open Food Facts, Makefile y CI. Base de datos
 propia (nueva instancia de Supabase). Entorno Flutter/Android ya armado: ver Doc 3
 de almacenero.
+
+### Reglas fiscales como datos (D42)
+
+Lo que diga el contador no debe obligar a tocar la estructura. Por eso las reglas **no están en
+código**:
+
+- La **condición fiscal** del negocio es una tabla con vigencia (desde, hasta), no un campo.
+- Las **alícuotas** (IVA 21, 10,5, 0, exento) viven en una tabla de tipos de impuesto con
+  porcentaje en puntos básicos y vigencia; una categoría o un producto apunta a un tipo.
+- Qué se **discrimina**, si el IVA de compra es crédito fiscal y cómo se **conserva** el precio al
+  cambiar de condición son **parámetros por condición**, no `if` en el backend.
+- El cálculo es una función pura sobre esos datos, con casos de prueba fijados como datos
+  (entrada y salida exactas). Si el contador cambia una regla, se cambia un dato y se agrega
+  un caso.
+- Hasta que responda, todo queda marcado «sin validar».
+
+## Panel de plataforma
+
+Aplicación web chica, **solo para el administrador de plataforma** (vos), no para los negocios.
+Se reutiliza la de almacenero (nginx sin privilegios, Alpine.js, API en `/v1/admin`, login con
+GoTrue, solo rol de plataforma). Funciones iniciales: conflictos del catálogo, tablero de
+calidad (Doc 7) y ejecuciones del ETL. Se sirve en `guazu.crulises.dev/admin/` (un solo nivel de
+subdominio). Detalle de operación y trampas: Doc 3 §Despliegue.
+
+## Abuso del escáner abierto
+
+El escáner del cliente es público y anónimo: sin límites, alguien puede crear sesiones en
+bucle o raspar precios. Mínimos para el corte 6: cupo por IP en el alta anónima, cupo por
+sesión en la lectura, `PROXY_HOPS` bien configurado detrás de Fly y Cloudflare, y límites
+distintos para clientes con cuenta. Detalle y trampas: Doc 3 §Abuso.
 
 ## Portabilidad: salir de Supabase (D27)
 

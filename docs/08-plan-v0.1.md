@@ -46,7 +46,10 @@ cerrado el 3.
 
 - Monorepo: `app/` como workspace de Dart con `apps/cliente`, `apps/negocio` y
   `packages/core`, `ui_kit`, `scanner`; `backend/`, `supabase/`, `etl/`.
-- Identificadores `ar.guazu.cliente` y `ar.guazu.negocio`; `ios/` generado en cada app.
+- Identificadores de app: **a confirmar** (Q29 en Doc 4: `ar.guazu.*` o `dev.crulises.guazu.*`);
+  `ios/` generado en cada app.
+- Puertos propios (Supabase `55321`+, backend `8100`, panel `8180`), `name: guazu` en el compose
+  y `project_id` propio, para convivir con almacenero.
 - **i18n armado** (`es_AR` base, `en` preparado) y `AyudaIcono(clave)` del `ui_kit`.
 - Makefile con `up`, `down`, `migrate`, `seed`, `test`, `lint`, `build`, `apk-cliente`,
   `apk-negocio`, `apk`, `doctor`, `setup` (copiando de almacenero lo relevante).
@@ -75,17 +78,30 @@ cerrado el 3.
 - **Hecho cuando**: se puede entrar anónimo, vincular la cuenta y ver qué permisos tiene
   cada rol, y la auditoría registra los cambios de permisos.
 
-### Corte 2: Catálogo global
+### Corte 2: Catálogo global (se parte en subcortes, un PR cada uno)
 
-- Copiar de almacenero (cuando se mergee su PR) `etl/comun`, `etl/sepa`, `etl/off`,
-  conflictos y sus pruebas. Adaptarlos a `catalogo_global`, `producto_fuentes` y
-  `conflictos_catalogo` (Doc 7).
+**2a: ETL base.**
+- Copiar de almacenero (ya en `main`) `etl/comun`, `etl/sepa`, `etl/off`, conflictos y sus
+  pruebas. Adaptarlos a `catalogo_global`, `producto_fuentes` y `conflictos_catalogo` (Doc 7).
 - Prioridad `manual > sepa > off`, idempotencia, trazabilidad y campos bloqueados.
-- Endpoint de búsqueda por EAN con la **normalización** (UPC-A a EAN-13) y administración
-  de conflictos para el ámbito de plataforma.
 - `make etl-sepa`, `make etl-off`, `make conflictos`.
-- **Hecho cuando**: una corrida de SEPA más OFF deja ~130 000 productos, una segunda
-  corrida no cambia nada y buscar un EAN responde en milisegundos.
+- **Hecho cuando**: una corrida de SEPA más OFF deja ~130 000 productos, una segunda corrida
+  no cambia nada.
+
+**2b: Búsqueda y normalización de EAN.**
+- Endpoint de búsqueda por EAN con **normalización** (UPC-A a EAN-13) en el backend y
+  administración de conflictos para el ámbito de plataforma.
+- **Hecho cuando**: buscar un EAN responde en milisegundos, con 8, 12, 13 y 14 dígitos.
+
+**2c: Normalizador y calidad** (copiar desde las ramas de los PR #20 y #21 de almacenero,
+anotando el hash en el Doc 9).
+- Normalizador, diccionarios en CSV, columnas y estados de calidad, `make catalogo-calidad` y
+  `make catalogo-renormalizar`, `services/calidad.py` con su prueba de paridad.
+- **Hecho cuando**: la re-normalización repetida da «Cambiarían: 0» y las cifras de calidad
+  se parecen a las de almacenero (Doc 7 §Calidad).
+
+**2d (posterior al release de almacenero):** cola de sugerencias, CSV curado y ETL desde el
+panel, si el otro proyecto los mergea (Doc 7).
 
 ### Corte 3: Productos, costos, impuestos y precio
 
@@ -98,7 +114,7 @@ cerrado el 3.
 - **Precios vigentes calculados al escribir**: se recalculan al cambiar un costo, un
   margen, una categoría o la condición fiscal.
 - App Negocio: **alta por escaneo** (si el EAN no está, carga bajo demanda desde OFF y si
-  no, a mano), edición, categorías, margen por producto y por categoría, carga de costos
+  no, a mano; **foto propia opcional** porque SEPA no trae imágenes), edición, categorías, margen por producto y por categoría, carga de costos
   guiada por el tipo de comprobante.
 - Asistente de cambio de condición fiscal con antes y después (los tres modos del Doc 2).
 - **Hecho cuando**: el dueño carga un producto escaneando, le pone costo y margen y ve el
@@ -133,7 +149,10 @@ cerrado el 3.
   `precios_vigentes`.
 - API de lectura: resolver sucursal por polígono, precio vigente por EAN, imagen y
   promoción. Rate limit por sesión. Caché corto en memoria si hace falta.
-- App Cliente: sesión anónima, **escaneo**, resultado con imagen, precio y promoción,
+- Escáner con `mobile_scanner` (formatos `ean13`, `ean8`, `upcA`, `upcE`, sin duplicados) y
+  **entrada manual de EAN** como plan B, igual que en almacenero (Doc 3 §Escáner). Rate limit
+  por IP y por sesión en el alta anónima y en la lectura.
+- App Cliente: sesión anónima, **escaneo**, resultado con imagen (o imagen de reemplazo), precio y promoción,
   elección de sucursal (ubicación, QR o manual), pantalla **"Datos y licencias"**, ayuda
   contextual.
 - **Hecho cuando**: con un celular real se escanea un producto cargado en el corte 3 y se
@@ -142,8 +161,12 @@ cerrado el 3.
 
 ### Corte 7: Despliegue de pruebas cerradas y ensayo de salida
 
-- Proyecto de Supabase en la nube, backend en Fly.io, `guazu-api.crulises.dev/v1` con TLS,
-  secretos fuera del repo, APK firmados de las dos apps y distribución a testers.
+- Proyecto de Supabase en la nube, backend en Fly.io (región `gru`), `guazu-api.crulises.dev/v1`
+  con TLS (Cloudflare: nube gris, `fly certs`, después proxy con Full strict), secretos con
+  `fly secrets`, APK firmados de las dos apps (keystore fuera del repo y con copia) y
+  distribución a testers. Seguir la guía de despliegue de almacenero (Doc 9).
+- `make backup` y `make restore-test` (heredados) funcionando contra la base de la nube; copia
+  del `.dump` fuera de la máquina.
 - **Ensayo de salida** de Supabase (`revisar/ensayo-de-salida.md`).
 - **Hecho cuando**: un tester instala el APK del cliente, escanea y ve precios reales, y el
   ensayo de salida se completó con sus hallazgos anotados.
@@ -160,10 +183,16 @@ cerrado el 3.
 
 ## Riesgos
 
-- **El PR del ETL de almacenero sigue abierto**: si cambia, hay que copiar la versión
-  final. Mitigación: empezar el corte 2 después de su merge.
-- **Cálculo de impuestos sin validar**: queda configurable y marcado hasta que responda el
-  contador.
-- **`mobile_scanner` con UPC-A**: se mide en un celular real en el corte 6 (queda
-  pendiente heredado del otro proyecto).
-- **Tamaño del corte 1 y 3**: son grandes; si se alargan, se parten en dos PR.
+- **Los PR #19, #20 y #21 de almacenero siguen abiertos** (release, normalizador, calidad):
+  si cambian, hay que copiar la versión final. Mitigación: copiar desde la rama anotando el
+  hash (Doc 9) y rever la diferencia al mergear.
+- **Cálculo de impuestos sin validar**: las reglas fiscales son **datos editables, no código**
+  (tablas con vigencia, Doc 2 §Impuestos), así que lo que diga el contador se cambia sin tocar
+  la estructura. Queda marcado «sin validar» hasta que responda.
+- **`mobile_scanner` con UPC-A**: ya está probado en celular real en almacenero (formatos
+  `ean13`, `ean8`, `upcA`, `upcE`); solo falta medir en guazu qué longitud entrega (Doc 3).
+- **Imágenes**: el 68,6 % del catálogo no tiene; hace falta imagen de reemplazo en el corte 6.
+- **Dos proyectos en la misma Mac**: puertos y `name` del compose propios desde el corte 0
+  (Doc 3 §Docker).
+- **Tamaño de los cortes**: se pueden partir en **tantos PR como haga falta**; es preferible
+  PR chicos y revisables (el 1, el 3 y el 2 ya vienen partidos o parten en dos).
