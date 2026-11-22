@@ -313,6 +313,20 @@ El paso a paso para armar la máquina está en `06-setup-entorno.md`.
   repetida): los motivos que salen de comparar con el crudo (`tamano_en_conflicto`, `abreviado`)
   viajan con la fila (`_PEGAJOSOS`).
 
+### Corte 0: lo que pasó al armar el esqueleto (2026-11-22) **[guazu]**
+- **Flutter 3.50 usa `material_ui`** (`package:material_ui/material_ui.dart`), no `flutter/material.dart`. Los
+  delegados de localización también cambiaron: usar `...GlobalMaterialLocalizations.delegates` (plural, incluye
+  Cupertino); `GlobalMaterialLocalizations.delegate` y `GlobalCupertinoLocalizations` están deprecados. El código
+  que genera `gen-l10n` los usa igual: se excluye del análisis en `app/analysis_options.yaml`.
+- **Workspace de Dart:** cada paquete lleva `resolution: workspace`; los `pubspec.lock` y `.iml` sueltos de
+  `flutter create` se borran. Una `description:` con dos puntos hay que ponerla entre comillas.
+- **Tests de widgets:** corren con idioma inglés por defecto; fijar `localesTestValue = [Locale('es')]`. Una lista
+  perezosa solo construye lo visible: agrandar la pantalla (`tester.view.physicalSize`).
+- **`flutter build apk`** instala solo las Build-Tools 36.0.0 la primera vez (además de las 35.0.0 y 28.0.3 del Doc 6)
+  y baja artefactos de Android: el primer build tarda varios minutos.
+- **Shell no interactiva:** `~/.zshrc` no se carga; para correr `make` desde un script usar `zsh -ic '...'`.
+- **`tool/version.sh`** con un contador vacío (no inexistente) falla por `set -e`; el script lo crea solo.
+
 ### Casos de prueba de dinero e impuestos **[guazu]**
 - Los casos del cálculo de precio y de la conversión Monotributo ↔ RI se **fijan como datos**
   (entrada → salida exacta) y los valida el contador (`validar-profesional/contador.md`).
