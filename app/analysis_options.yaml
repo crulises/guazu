@@ -1,0 +1,6 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    # Código generado por `flutter gen-l10n` (usa delegados que Flutter 3.50 marca como deprecados).
+    - "**/lib/l10n/*localizations*.dart"

@@ -1,0 +1,15 @@
+name: guazu_scanner
+description: "Escaneo de EAN. En el corte 0 solo la validación de entrada; la cámara llega en el corte 6."
+publish_to: none
+version: 0.0.1
+resolution: workspace
+environment:
+  sdk: ^3.14.0
+  flutter: ">=3.50.0"
+dependencies:
+  flutter:
+    sdk: flutter
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

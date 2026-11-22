@@ -1,0 +1,10 @@
+name: guazu_workspace
+publish_to: none
+environment:
+  sdk: ^3.14.0
+workspace:
+  - apps/cliente
+  - apps/negocio
+  - packages/core
+  - packages/ui_kit
+  - packages/scanner

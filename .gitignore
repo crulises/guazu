@@ -8,6 +8,14 @@ __pycache__/
 supabase/.branches/
 supabase/.temp/
 etl/data/
-build/
+backups/
+*.jks
+key.properties
+# Flutter
 .dart_tool/
-.claude/worktrees/
+build/
+.flutter-plugins*
+*.iml
+.idea/
+Pods/
+*.xcworkspace/xcuserdata/
