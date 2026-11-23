@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup doctor venv up down migrate seed test test-backend test-app lint lint-backend lint-app build apk apk-cliente apk-negocio
+.PHONY: help setup doctor venv up down migrate seed dueno plataforma test test-backend test-app lint lint-backend lint-app build apk apk-cliente apk-negocio
 
 SHELL := /bin/bash
 VENV := backend/.venv
@@ -48,6 +48,29 @@ migrate: ## Aplica migraciones pendientes
 seed: ## Carga datos de arranque (idempotente)
 	@set -a; . ./.env 2>/dev/null || . ./.env.example; set +a; \
 	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql
+
+dueno: ## Da todos los roles del negocio de prueba a un usuario: make dueno ALIAS=anon-1ff221
+	@test -n "$(ALIAS)" || { echo "Uso: make dueno ALIAS=<alias del usuario (ver GET /v1/me)>"; exit 1; }
+	@# Las membresias estan protegidas por trigger: se habilita la escritura solo en esta transaccion.
+	@set -a; . ./.env 2>/dev/null || . ./.env.example; set +a; \
+	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -v alias="$(ALIAS)" -c "select 1" >/dev/null && \
+	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -v alias="$(ALIAS)" <<< \
+	"begin; select set_config('app.membresia_write', 'on', true); \
+	 insert into membresias (usuario_id, negocio_id, rol_id) \
+	 select u.id, r.negocio_id, r.id from usuarios u, roles r \
+	 where u.alias = :'alias' and r.negocio_id = '00000000-0000-4000-8000-000000000001' \
+	 on conflict do nothing; \
+	 select u.alias, r.clave from membresias m join usuarios u on u.id = m.usuario_id \
+	 join roles r on r.id = m.rol_id where u.alias = :'alias' order by r.clave; commit;"
+
+plataforma: ## Da un rol de plataforma: make plataforma ALIAS=<alias> ROL=admin|moderador|superadmin
+	@test -n "$(ALIAS)" -a -n "$(ROL)" || { echo "Uso: make plataforma ALIAS=<alias> ROL=<admin|moderador|superadmin>"; exit 1; }
+	@# Hace falta una cuenta registrada (con email): un anonimo no puede ser de la plataforma.
+	@set -a; . ./.env 2>/dev/null || . ./.env.example; set +a; \
+	psql "$$DATABASE_URL" -v ON_ERROR_STOP=1 -v alias="$(ALIAS)" -v rol="$(ROL)" <<< \
+	"begin; select set_config('app.plataforma_write', 'on', true); \
+	 insert into plataforma_miembros (usuario_id, rol) select id, :'rol' from usuarios where alias = :'alias' \
+	 on conflict (usuario_id) do update set rol = excluded.rol, desde = now() returning usuario_id, rol; commit;"
 
 # --- calidad ---------------------------------------------------------------
 $(PY):

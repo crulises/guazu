@@ -114,6 +114,9 @@ cerrado el 3.
   comunes.
 - **Hecho cuando**: se puede entrar anónimo, vincular la cuenta y ver qué permisos tiene
   cada rol, y la auditoría registra los cambios de permisos.
+- **Estado (issue #3)**: el backend cumple el criterio y está probado de punta a punta (API y base). La
+  interfaz en las apps (pantalla de cuenta y de roles) llega con los hitos que la usan; hasta entonces se
+  verifica por API (`/v1/me`, `/v1/negocios/{id}/roles`). El panel web de plataforma es posterior.
 
 ### Corte 2: Catálogo global (se parte en subcortes, un PR cada uno)
 
