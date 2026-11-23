@@ -153,6 +153,9 @@ def test_resolver_con_b_cambia_el_catalogo_lo_bloquea_y_audita(persona, producto
     fila = db.fetch("select nombre, campos_bloqueados from catalogo_global where ean = $1", ean)[0]
     assert fila["nombre"] == "Yerba Mate Playadito Suave"
     assert fila["campos_bloqueados"] == ["nombre"]
+    # resolver recalcula la calidad del producto
+    calidad = db.fetch("select estado_calidad from catalogo_global where ean = $1", ean)[0]
+    assert calidad["estado_calidad"] is not None
     # ya resuelto: no se resuelve dos veces ni aparece entre los pendientes
     r = admin.post(f"/v1/admin/catalogo/conflictos/{cid}/resolver", json={"elegido": "a"})
     assert r.status_code == 409 and r.json()["detail"]["codigo"] == "conflicto_resuelto"

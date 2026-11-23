@@ -1,28 +1,31 @@
-"""Capa minima compartida por todos los ETL: conexion y fusion al catalogo global.
+"""Capa mínima compartida por todos los ETL: conexión y fusión al catálogo canónico.
 
-Cada ETL (uno por fuente) transforma su formato a filas `Producto`, y aca se fusionan en bloque
-con SQL (staging temporal y sentencias por conjuntos), que es lo que aguanta millones de filas.
-Idempotente: correrlo de nuevo no cambia nada.
+Cada ETL (uno por fuente) transforma su formato a filas `Producto`, y acá se
+fusionan en bloque con SQL (staging temporal + sentencias por conjuntos), que es
+lo que aguanta millones de filas. Idempotente: correrlo de nuevo no cambia nada.
 
-Reglas de fusion por EAN, con `fuente` = la fuente que se esta cargando:
-- Siempre se guarda el dato crudo en `producto_fuentes` (ean, fuente).
+Reglas de fusión por EAN, con `fuente` = la fuente que se está cargando:
+- Siempre se guarda el dato crudo en `producto_fuentes` (ean, fuente). Lo que llega al
+  catálogo ya pasó por el normalizador (Doc 7): nombre limpio, marca canónica (los
+  placeholders como «S/d» son NULL, no marca), tamaño y presentación extraídos del nombre.
+- Tras fusionar, se recalcula la calidad (puntaje, estado, motivos) de cada EAN del lote
+  sobre la fila FINAL, respetando los campos bloqueados.
 - EAN nuevo: se crea en `catalogo_global` con `origen = fuente`.
-- El catalogo ya viene de esta misma fuente: se refresca (salvo campos bloqueados).
-- El catalogo viene de otra fuente: si la que se carga tiene mas prioridad (config global
+- El catálogo ya viene de esta misma fuente: se refresca (salvo campos bloqueados).
+- El catálogo viene de otra fuente: si la que se carga tiene más prioridad (config
   `catalogo_prioridad_fuentes`, por defecto manual > sepa > off) pisa los campos no
-  bloqueados; si no, solo completa los vacios. Lo que discrepa de verdad queda en
+  bloqueados; si no, solo completa los vacíos. Lo que discrepa de verdad queda en
   `conflictos_catalogo`.
-
-El normalizador de nombres, marcas y tamanos (Doc 7, issue de calidad) se enchufa en
-`fusionar_lote` antes de fusionar; este modulo ya deja ese lugar.
 """
 
 import os
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from decimal import Decimal
 
 import asyncpg
+
+from etl.comun.normalizar import NORMALIZADOR_VERSION, Entrada, normalizar, puntuar
 
 DATABASE_URL_LOCAL = "postgresql://postgres:postgres@127.0.0.1:55322/postgres"
 
@@ -40,6 +43,8 @@ class Producto:
     tamano_unidad: str | None = None
     imagen_url: str | None = None
     datos: str = "{}"  # JSON crudo de la fuente, para `producto_fuentes`
+    pack_cantidad: int | None = None  # los llena el normalizador, no la fuente
+    presentacion: str | None = None
 
 
 @dataclass
@@ -59,12 +64,12 @@ class Reporte:
 
     def texto(self) -> str:
         lineas = [
-            f"Filas leidas:                  {self.leidas}",
-            f"Productos nuevos en catalogo:  {self.catalogo_nuevos}",
-            f"Productos del catalogo actualizados: {self.catalogo_actualizados}",
+            f"Filas leídas:                  {self.leidas}",
+            f"Productos nuevos en catálogo:  {self.catalogo_nuevos}",
+            f"Productos del catálogo actualizados: {self.catalogo_actualizados}",
             f"Nuevos en producto_fuentes:    {self.fuente_nuevas}",
             f"Actualizados en producto_fuentes: {self.fuente_actualizadas}",
-            f"Cargados sin tamano usable:    {self.sin_tamano}",
+            f"Cargados sin tamaño usable:    {self.sin_tamano}",
             f"Conflictos nuevos a revisar:   {self.conflictos_nuevos}",
             f"Descartadas:                   {self.total_descartadas}",
         ]
@@ -80,19 +85,43 @@ async def conectar() -> asyncpg.Connection:
 _CREAR_STAGING = """
 create temp table if not exists etl_stg (
     ean text primary key, nombre text not null, marca text,
-    tamano_valor numeric, tamano_unidad text, imagen_url text, datos jsonb not null
+    tamano_valor numeric, tamano_unidad text, imagen_url text, datos jsonb not null,
+    pack_cantidad integer, presentacion text
 ) on commit delete rows
 """
 
 _COLUMNAS = [
-    "ean",
-    "nombre",
-    "marca",
-    "tamano_valor",
-    "tamano_unidad",
-    "imagen_url",
-    "datos",
-]
+    "ean", "nombre", "marca", "tamano_valor", "tamano_unidad", "imagen_url", "datos",
+    "pack_cantidad", "presentacion",
+]  # fmt: skip
+
+_CREAR_CALIDAD = """
+create temp table if not exists etl_cal (
+    ean text primary key, calidad smallint not null, estado text not null,
+    motivos text[] not null, version integer not null
+) on commit delete rows
+"""
+
+# Columnas con las que se evalúa la calidad de la fila FINAL del catálogo.
+_SQL_FILAS = """
+select ean, nombre, marca, tamano_valor, tamano_unidad, imagen_url, presentacion,
+       campos_bloqueados, calidad_motivos, origen
+  from catalogo_global where ean = any ($1::text[])
+"""
+
+_SQL_CALIDAD = """
+with upd as (
+    update catalogo_global p
+       set calidad = c.calidad, estado_calidad = c.estado, calidad_motivos = c.motivos,
+           normalizador_version = c.version
+      from etl_cal c
+     where p.ean = c.ean
+       and (p.calidad, p.estado_calidad, p.calidad_motivos, p.normalizador_version)
+           is distinct from (c.calidad, c.estado, c.motivos, c.version)
+    returning 1
+)
+select count(*) from upd
+"""
 
 # 1. Dato crudo por fuente.
 _SQL_FUENTES = """
@@ -107,28 +136,30 @@ with up as (
 select count(*) filter (where nueva), count(*) filter (where not nueva) from up
 """
 
-# 2. EAN que el catalogo no conoce.
+# 2. EAN que el catálogo no conoce.
 _SQL_NUEVOS = """
 with ins as (
     insert into catalogo_global
-        (ean, nombre, marca, tamano_valor, tamano_unidad, imagen_url, origen)
-    select ean, nombre, marca, tamano_valor, tamano_unidad, imagen_url, $1::text from etl_stg
+        (ean, nombre, marca, tamano_valor, tamano_unidad, imagen_url, origen,
+         pack_cantidad, presentacion)
+    select ean, nombre, marca, tamano_valor, tamano_unidad, imagen_url, $1::text,
+           pack_cantidad, presentacion from etl_stg
     on conflict (ean) do nothing
     returning 1
 )
 select count(*) from ins
 """
 
-# 3. EAN que ya estaban: refrescar / completar / pisar segun prioridad.
-#    `propio` = el catalogo ya venia de esta fuente; `gana` = esta fuente tiene mas
-#    prioridad que la del catalogo (y el catalogo no es manual).
+# 3. EAN que ya estaban: refrescar / completar / pisar según prioridad.
+#    `propio` = el catálogo ya venía de esta fuente; `gana` = esta fuente tiene más
+#    prioridad que la del catálogo (y el catálogo no es manual).
 _SQL_EXISTENTES = """
 with cand as (
     select p.id, p.origen, p.campos_bloqueados as bl,
            p.nombre as n0, p.marca as m0, p.tamano_valor as tv0, p.tamano_unidad as tu0,
-           p.imagen_url as i0,
-           s.nombre as n1, s.marca as m1, s.tamano_valor as tv1, s.tamano_unidad as tu1,
-           s.imagen_url as i1,
+           p.imagen_url as i0, p.pack_cantidad as pk0, p.presentacion as pr0,
+           s.pack_cantidad as pk1, s.presentacion as pr1, s.nombre as n1, s.marca as m1,
+           s.tamano_valor as tv1, s.tamano_unidad as tu1, s.imagen_url as i1,
            (p.origen = $1::text) as propio,
            (p.origen <> $1 and prioridad_fuente($1::text) < prioridad_fuente(p.origen)) as gana
       from catalogo_global p join etl_stg s using (ean)
@@ -148,30 +179,38 @@ nuevo as (
              else coalesce(tu0, tu1) end as tu,
         case when (propio or gana) and i1 is not null then i1
              else coalesce(i0, i1) end as i,
+        case when 'tamano' = any (bl) then pk0
+             when (propio or gana) and pk1 is not null then pk1
+             else coalesce(pk0, pk1) end as pk,
+        case when 'presentacion' = any (bl) then pr0
+             when (propio or gana) and pr1 is not null then pr1
+             else coalesce(pr0, pr1) end as pr,
         case when gana then $1::text else origen end as o,
-        n0, m0, tv0, tu0, i0, origen as o0
+        n0, m0, tv0, tu0, i0, origen as o0, pk0, pr0
       from cand
 ),
 upd as (
     update catalogo_global p
        set nombre = nuevo.n, marca = nuevo.m, tamano_valor = nuevo.tv,
-           tamano_unidad = nuevo.tu, imagen_url = nuevo.i, origen = nuevo.o
+           tamano_unidad = nuevo.tu, imagen_url = nuevo.i, origen = nuevo.o,
+           pack_cantidad = nuevo.pk, presentacion = nuevo.pr
       from nuevo
      where p.id = nuevo.id
-       and (nuevo.n, nuevo.m, nuevo.tv, nuevo.tu, nuevo.i, nuevo.o)
+       and (nuevo.n, nuevo.m, nuevo.tv, nuevo.tu, nuevo.i, nuevo.o, nuevo.pk, nuevo.pr)
            is distinct from
-           (nuevo.n0, nuevo.m0, nuevo.tv0, nuevo.tu0, nuevo.i0, nuevo.o0)
+           (nuevo.n0, nuevo.m0, nuevo.tv0, nuevo.tu0, nuevo.i0, nuevo.o0, nuevo.pk0, nuevo.pr0)
     returning 1
 )
 select count(*) from upd
 """
 
-# 4. Discrepancias reales con un catalogo que NO viene de esta fuente (tras el paso 3, si esta
-#    fuente gano, el catalogo ya es de ella y no hay nada que comparar).
-#    Entre fuentes automaticas el nombre y la marca los resuelve la prioridad (sus textos
-#    siempre difieren: "ACEITE OLIVA NUCETE BOT 250 CC" vs "Aceite de oliva"); contra lo
-#    cargado a mano si se avisa. El tamano es un dato duro: se avisa si discrepan dentro de la
-#    misma familia (masa, volumen, unidades); "50 u" contra "75 g" no se compara.
+# 4. Discrepancias reales con un catálogo que NO viene de esta fuente (tras el paso 3,
+#    si esta fuente ganó, el catálogo ya es de ella y no hay nada que comparar).
+#    Entre fuentes automáticas el nombre y la marca los resuelve la prioridad (sus
+#    textos siempre difieren: «ACEITE OLIVA NUCETE BOT 250 CC» vs «Aceite de oliva»);
+#    contra lo cargado a mano sí se avisa. El tamaño es un dato duro: se avisa si
+#    discrepan dentro de la misma familia (masa, volumen, unidades); «50 u» contra
+#    «75 g» no se compara.
 _SQL_CONFLICTOS = """
 with par as (
     select p.ean, p.origen, p.campos_bloqueados as bl,
@@ -204,11 +243,99 @@ select count(*) from ins
 """
 
 
+# Motivos que se detectan comparando el dato crudo con el nombre: al normalizar de nuevo la
+# fila ya limpia no se vuelven a ver, así que viajan con la fila (mientras el nombre sea el
+# mismo que los generó).
+_PEGAJOSOS = {"tamano_en_conflicto", "abreviado", "marca_en_nombre", "tamano_ambiguo"}
+
+
+def normalizar_producto(p: Producto) -> tuple[Producto, frozenset[str]]:
+    """Pasa lo que dice la fuente por el normalizador. El dato crudo sigue en `datos`.
+    -> (producto normalizado, motivos pegajosos que detectó)."""
+    tam = (p.tamano_valor, p.tamano_unidad) if p.tamano_valor and p.tamano_unidad else None
+    s = normalizar(Entrada(p.nombre, p.marca, tam, bool(p.imagen_url)))
+    nuevo = replace(
+        p,
+        nombre=s.nombre,
+        marca=s.marca,
+        tamano_valor=s.tamano[0] if s.tamano else None,
+        tamano_unidad=s.tamano[1] if s.tamano else None,
+        pack_cantidad=s.pack_cantidad,
+        presentacion=s.presentacion,
+    )
+    return nuevo, frozenset(s.motivos) & _PEGAJOSOS
+
+
+# Motivos que una persona resuelve al corregir (y bloquear) ese campo: dejan de restar.
+_RESUELTOS_POR = {
+    "nombre": {"abreviado", "marca_en_nombre", "tamano_en_conflicto", "nombre_corto"},
+    "marca": {"marca_en_nombre", "fabricante_como_marca"},
+    "tamano": {"tamano_en_conflicto"},
+    "presentacion": set(),
+}
+_ESTRUCTURALES = {"sin_marca", "sin_tamano", "nombre_corto", "muy_incompleto"}
+
+
+def evaluar_fila(r, pegajosos: frozenset[str] = frozenset()) -> tuple[int, str, list[str], int]:
+    """(puntaje, estado, motivos, versión) de una fila del catálogo, tal como está.
+    `pegajosos`: motivos que detectó el normalizador al leer el dato crudo.
+    Lo que una persona corrigió y bloqueó no se vuelve a juzgar."""
+    tam = (r["tamano_valor"], r["tamano_unidad"]) if r["tamano_valor"] is not None else None
+    bloqueados = set(r["campos_bloqueados"])
+    s = normalizar(Entrada(r["nombre"], r["marca"], tam, bool(r["imagen_url"]), r["presentacion"]))
+    if "nombre_inservible" in s.motivos and "nombre" not in bloqueados:
+        return s.calidad, s.estado, list(s.motivos), NORMALIZADOR_VERSION
+    resueltos = set().union(*(_RESUELTOS_POR[c] for c in bloqueados)) if bloqueados else set()
+    motivos = [
+        m
+        for m in (*s.motivos, *pegajosos)
+        if m not in _ESTRUCTURALES | resueltos | {"nombre_inservible"}
+    ]
+    # Lo que una persona cargó o corrigió no se descarta (Doc 7 §5.1).
+    revisado = bool(bloqueados) or r["origen"] == "manual"
+    calidad, estado, motivos_finales = puntuar(
+        r["nombre"], r["marca"], tam, bool(r["imagen_url"]), r["presentacion"], motivos, revisado
+    )
+    return calidad, estado, list(motivos_finales), NORMALIZADOR_VERSION
+
+
+def _vigentes(r, pegajoso: tuple[str, frozenset[str]] | None) -> frozenset[str]:
+    """Si el nombre final es el que acaba de normalizarse, valen sus motivos; si ganó otro
+    dato (otra fuente, o lo bloqueado), se conservan los que la fila ya tenía."""
+    if pegajoso and pegajoso[0] == r["nombre"]:
+        return pegajoso[1]
+    return frozenset(r["calidad_motivos"] or ()) & _PEGAJOSOS
+
+
+async def recalcular_calidad(
+    conn: asyncpg.Connection,
+    eans: list[str],
+    pegajosos: dict[str, tuple[str, frozenset[str]]] | None = None,
+) -> int:
+    """Recalcula la calidad de estos EAN sobre su fila final (dentro de la transacción).
+    `pegajosos[ean] = (nombre normalizado, motivos)`: valen si el nombre final es ese."""
+    pegajosos = pegajosos or {}
+    filas = await conn.fetch(_SQL_FILAS, eans)
+    await conn.execute(_CREAR_CALIDAD)
+    await conn.copy_records_to_table(
+        "etl_cal",
+        records=[
+            (r["ean"], *evaluar_fila(r, _vigentes(r, pegajosos.get(r["ean"])))) for r in filas
+        ],
+        columns=["ean", "calidad", "estado", "motivos", "version"],
+    )
+    n = await conn.fetchval(_SQL_CALIDAD)
+    await conn.execute("truncate etl_cal")
+    return n
+
+
 async def fusionar_lote(
     conn: asyncpg.Connection, fuente: str, productos: list[Producto], reporte: Reporte
 ) -> None:
-    """Fusiona un lote (una transaccion). EAN repetidos en el lote: gana el ultimo."""
-    unicos = {p.ean: p for p in productos}
+    """Fusiona un lote (una transacción). EAN repetidos en el lote: gana el último."""
+    normalizados = {p.ean: normalizar_producto(p) for p in productos}
+    unicos = {ean: n[0] for ean, n in normalizados.items()}
+    pegajosos = {ean: (n[0].nombre, n[1]) for ean, n in normalizados.items()}
     if not unicos:
         return
     async with conn.transaction():
@@ -224,6 +351,8 @@ async def fusionar_lote(
                     p.tamano_unidad,
                     p.imagen_url,
                     p.datos,
+                    p.pack_cantidad,
+                    p.presentacion,
                 )
                 for p in unicos.values()
             ],
@@ -235,4 +364,5 @@ async def fusionar_lote(
         reporte.catalogo_nuevos += await conn.fetchval(_SQL_NUEVOS, fuente)
         reporte.catalogo_actualizados += await conn.fetchval(_SQL_EXISTENTES, fuente)
         reporte.conflictos_nuevos += await conn.fetchval(_SQL_CONFLICTOS, fuente)
+        await recalcular_calidad(conn, list(unicos), pegajosos)
         await conn.execute("truncate etl_stg")

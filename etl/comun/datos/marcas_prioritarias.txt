@@ -1,0 +1,4 @@
+# Marcas que, si aparecen en el NOMBRE, mandan sobre una marca de la fuente que no está en
+# `marcas.csv` (típicamente la razón comercial o un rubro: «Scj Aire», «Prov.varios Limpieza»).
+# Una por línea, tal como figura en la columna `marca` de `marcas.csv`.
+Lysoform

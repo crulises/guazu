@@ -1,0 +1,15 @@
+# Tokens que parecen truncados o con varias lecturas posibles. No se expanden: si un nombre
+# trae 2 o más, queda con el motivo `abreviado`. Se completa con `make catalogo-abreviaturas`.
+desc
+ch
+origin
+plast
+deslac
+cep
+maq
+tint
+shamp
+acond
+antico
+est
+rem

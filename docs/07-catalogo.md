@@ -147,6 +147,21 @@ que mienten. Almacenero lo resolvió con un **normalizador determinista y versio
 Medido sobre 134 505 productos: sin tamaño 61,1 % → 48,8 %; `completo` 53,1 %, `parcial`
 40,5 %, `dudoso` 2,0 %, `descartado` 4,3 %.
 
+**Medido en guazu (2026-11-23, hito #6)** sobre 130 902 productos: sin tamaño 80 560 → 64 462
+(61,5 % → 49,2 %); `completo` 53,9 %, `parcial` 39,9 %, `dudoso` 1,7 %, `descartado` 4,4 %.
+Es lo mismo que en almacenero (la diferencia es de unas décimas). Sin marca sube de 15 364 a
+28 211 a propósito: los placeholders («S/d», «Genérico») dejan de contar como marca.
+
+**Cómo usarlo.** Tras instalar la migración, `make catalogo-renormalizar APLICAR=1` normaliza
+lo que se cargó antes del normalizador. Como parte de un catálogo viejo (nombres ya pasados a
+Título), puede hacer falta una **segunda pasada** (unas decenas de filas, el 0,03 %, cambian
+otra vez); desde ahí repetirlo da «Cambiarían: 0». Ese resto sale de dos casos del normalizador
+heredado: una palabra de envase al final del nombre (`pet`) que solo se saca en la segunda
+vuelta, y un nombre que queda con minúscula inicial al sacar la primera palabra. Se deja igual
+que en almacenero para no separar los dos normalizadores; conviene arreglarlo allá primero.
+Cargar de nuevo SEPA u OFF también reescribe esas decenas de filas (el ETL parte del crudo):
+repetir el ETL no cambia nada más.
+
 ### Qué cambia para guazu
 
 - **Decidido (D53): `descartado` no bloquea al negocio.** En almacenero un producto descartado se oculta

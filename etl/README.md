@@ -36,11 +36,20 @@ Los conflictos también se resuelven por la API de plataforma (`/v1/admin/catalo
 Cargar es idempotente: repetir una corrida no duplica ni pisa lo resuelto a mano. Los precios de
 SEPA no se cargan: el precio lo define cada negocio.
 
-## Lo que viene después
+## Calidad y normalización
 
-El normalizador de nombres, marcas y tamaños y los estados de calidad (`docs/07-catalogo.md`,
-§Calidad) se enchufan en `fusionar_lote`, antes de fusionar. Hasta entonces el catálogo guarda lo
-que dice la fuente (SEPA pasa de MAYÚSCULAS a Título).
+Toda fila pasa por el normalizador (`etl/comun/normalizar.py`, diccionarios en
+`etl/comun/datos/`) antes de fusionarse, y se recalcula su calidad (`completo`, `parcial`,
+`dudoso`, `descartado`). Un producto `descartado` se guarda igual pero no se muestra.
+
+```bash
+make catalogo-calidad MUESTRA=20      # mide, no escribe (ESTADO=dudoso para filtrar)
+make catalogo-renormalizar            # simulacro: cuántas filas cambiarían
+make catalogo-renormalizar APLICAR=1  # escribe; repetirlo da "Cambiarían: 0"
+```
+
+Hace falta renormalizar una vez al instalar la migración de calidad, y de nuevo cada vez que
+sube `NORMALIZADOR_VERSION` o se edita un CSV de `datos/`. Ver `docs/07-catalogo.md`, §Calidad.
 
 ## Tests
 

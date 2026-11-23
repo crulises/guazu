@@ -1,0 +1,27 @@
+# codigo,presentacion,en_nombre: codigo de envase de SEPA (BOT-750-ml.) y su presentación.
+# en_nombre=1: la palabra, suelta en el nombre, también es el envase y se saca del nombre
+# cuando el nombre trae un tamaño. en_nombre=2: igual, y además si es la ÚLTIMA palabra del
+# nombre aunque no haya tamaño («… Oliva Ext Virg PET»).
+bot,botella,1
+botella,botella,1
+paq,paquete,1
+cja,caja,0
+bsa,bolsa,0
+fco,frasco,1
+pot,pote,0
+doy,doypack,1
+doypack,doypack,1
+pck,pack,0
+lat,lata,0
+pet,pet,2
+pvc,pvc,1
+est,estuche,0
+bli,blister,0
+sob,sobre,0
+aer,aerosol,0
+bid,bidón,1
+bidon,bidón,1
+aero,aerosol,1
+spray,aerosol,1
+gat,gatillo,1
+d/p,doypack,1

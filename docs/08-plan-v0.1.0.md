@@ -143,6 +143,8 @@ anotar el hash en el Doc 9).
   persona carga fuera de estándar se limpia y completa **sin pisar nada cargado**, y se le avisa.
 - **Hecho cuando**: la re-normalización repetida da «Cambiarían: 0» y las cifras de calidad
   se parecen a las de almacenero (Doc 7 §Calidad).
+- Hecho en el issue #6 salvo los **estándares de carga** y sus avisos, que van con el #7 (corrección
+  de la plataforma y sugerencias).
 
 **2d: Corrección de la plataforma y sugerencias** (ya mergeado en almacenero, corte 15).
 - Un solo camino de escritura (`services/catalogo.py`: `aplicar` y `crear`) para la corrección

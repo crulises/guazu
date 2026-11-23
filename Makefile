@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup doctor venv up down migrate seed dueno plataforma test test-backend test-etl test-app etl-off-muestra etl-off-descargar etl-off etl-sepa-descargar etl-sepa conflictos lint lint-backend lint-app build apk apk-cliente apk-negocio
+.PHONY: help setup doctor venv up down migrate seed dueno plataforma test test-backend test-etl test-app etl-off-muestra etl-off-descargar etl-off etl-sepa-descargar etl-sepa conflictos catalogo-calidad catalogo-renormalizar lint lint-backend lint-app build apk apk-cliente apk-negocio
 
 SHELL := /bin/bash
 VENV := backend/.venv
@@ -148,6 +148,14 @@ etl-sepa: $(PY) ## Carga SEPA al catalogo: make etl-sepa SEPA_ARCHIVOS="etl/data
 conflictos: $(PY) ## Lista los conflictos de catalogo pendientes de revision
 	@set -a; . ./.env 2>/dev/null || . ./.env.example; set +a; \
 	$(PY) -m etl.conflictos
+
+catalogo-calidad: $(PY) ## Mide la calidad del catalogo con el normalizador (no escribe): make catalogo-calidad [MUESTRA=20] [ESTADO=dudoso]
+	@set -a; . ./.env 2>/dev/null || . ./.env.example; set +a; \
+	$(PY) -m etl.calidad --muestra $(or $(MUESTRA),0) $(if $(ESTADO),--estado $(ESTADO))
+
+catalogo-renormalizar: $(PY) ## Normaliza TODO el catalogo y recalcula la calidad (Doc 7). Simulacro; con APLICAR=1 escribe
+	@set -a; . ./.env 2>/dev/null || . ./.env.example; set +a; \
+	$(PY) -m etl.renormalizar $(if $(APLICAR),--aplicar)
 
 # --- apps en un celular ----------------------------------------------------
 # API_TIMEOUT_S=40 make apk-cliente -> espera 40 s por intento (default de la app: 20 s).

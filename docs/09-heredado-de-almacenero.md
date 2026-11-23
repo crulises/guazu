@@ -57,6 +57,7 @@ arrancar el corte 2c, no antes.
 | Fecha | Qué | Origen (`main` de almacenero) | Cambios |
 |-------|-----|-------------------------------|---------|
 | 2026-11-23 | `etl/comun` (EAN, tamaño, fusión por lotes), `etl/sepa`, `etl/off`, `etl/conflictos.py`, sus tests y los targets `etl-*` y `conflictos` | `f305810` | Destino `catalogo_global` sin `negocio_id`, puerto 55322, `prioridad_fuente` lee la config global de guazu, sin ETL de locales ni de OSM, y la fusión **sin normalizador** (llega con el hito de calidad) |
+| 2026-11-23 | Normalizador y diccionarios (`etl/comun/normalizar.py`, `etl/comun/datos/`), calidad en la fusión (`etl/comun/catalogo.py` completo), `etl/calidad.py`, `etl/renormalizar.py`, `services/calidad.py` con su paridad, `make catalogo-calidad` y `make catalogo-renormalizar` | `f305810` | Tabla `catalogo_global`, puerto 55322. `renormalizar` **sin avisos ni karma** (llegan con estándares y sugerencias, hito #7). Migración propia (`20261126000001`, `000002`): columnas de calidad y bloqueo de `presentacion` y del pack |
 
 ## Targets de Makefile previstos para guazu
 
