@@ -52,6 +52,12 @@ arrancar el corte 2c, no antes.
 | 7 | `make backup` y `make restore-test` con sus filtros de `pg_dump` | `Makefile` (PR #19) | Excluir `spatial_ref_sys` |
 | 7 | Panel web de plataforma (nginx + Alpine.js) | `admin-web/` | Ver abajo |
 
+## Copiado hasta ahora
+
+| Fecha | Qué | Origen (`main` de almacenero) | Cambios |
+|-------|-----|-------------------------------|---------|
+| 2026-11-23 | `etl/comun` (EAN, tamaño, fusión por lotes), `etl/sepa`, `etl/off`, `etl/conflictos.py`, sus tests y los targets `etl-*` y `conflictos` | `f305810` | Destino `catalogo_global` sin `negocio_id`, puerto 55322, `prioridad_fuente` lee la config global de guazu, sin ETL de locales ni de OSM, y la fusión **sin normalizador** (llega con el hito de calidad) |
+
 ## Targets de Makefile previstos para guazu
 
 Los de almacenero que se conservan: `up`, `down`, `migrate`, `seed`, `test`, `lint`,

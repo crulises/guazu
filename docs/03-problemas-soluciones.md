@@ -350,6 +350,18 @@ El paso a paso para armar la máquina está en `06-setup-entorno.md`.
 - **La base conoce los permisos de los roles de fábrica** (`instalar_roles_de_fabrica`) y el código también
   (`ROLES_DE_FABRICA`): una prueba de paridad exige que no se separen.
 
+### ETL base del catálogo global (issue #4, 2026-11-23) **[guazu]**
+- **Se copió sin el normalizador.** La `fusionar_lote` de almacenero llama al normalizador y recalcula
+  calidad en el mismo paso; acá el hito de calidad es aparte, así que la fusión guarda lo que dice la
+  fuente (SEPA pasa de MAYÚSCULAS a Título, nada más) y deja el lugar marcado. Los tests de calidad no se
+  copiaron: llegan con ese hito.
+- **El catálogo global es de la plataforma.** `guazu_app` (el rol de los negocios) solo puede leer
+  `catalogo_global`; no lee `producto_fuentes` ni `conflictos_catalogo`. Una prueba lo exige.
+- **`prioridad_fuente` lee la config global** (`negocio_id is null`) y no una columna `rubro` como en
+  almacenero. Una fuente desconocida queda última.
+- **Un constraint nuevo trae su regla** (Doc 2): los de `catalogo_global` tienen nombre explícito para
+  poder mapearlos a `reglas.POR_CONSTRAINT` cuando el catálogo tenga endpoints.
+
 ### Casos de prueba de dinero e impuestos **[guazu]**
 - Los casos del cálculo de precio y de la conversión Monotributo ↔ RI se **fijan como datos**
   (entrada → salida exacta) y los valida el contador (`validar-profesional/contador.md`).
