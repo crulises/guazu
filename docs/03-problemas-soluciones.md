@@ -324,7 +324,7 @@ El paso a paso para armar la máquina está en `06-setup-entorno.md`.
   perezosa solo construye lo visible: agrandar la pantalla (`tester.view.physicalSize`).
 - **`flutter build apk`** instala solo las Build-Tools 36.0.0 la primera vez (además de las 35.0.0 y 28.0.3 del Doc 6)
   y baja artefactos de Android: el primer build tarda varios minutos.
-- **Shell no interactiva:** `~/.zshrc` no se carga; para correr `make` desde un script usar `zsh -ic '...'`.
+- **Shell no interactiva:** `~/.zshrc` no se carga (ver "PATH en shells no interactivos" más abajo: se resolvió moviendo el PATH a `~/.zshenv`).
 - **`tool/version.sh`** con un contador vacío (no inexistente) falla por `set -e`; el script lo crea solo.
 
 ### Identidad, permisos y RLS (issue #3, 2026-11-23) **[guazu]**
@@ -749,8 +749,8 @@ El paso a paso para armar la máquina está en `06-setup-entorno.md`.
 - `brew install supabase/tap/supabase` trae la **3.2.0**, pero el CI fija la **3.1.0**. Solución aplicada: `brew uninstall
   supabase` y copiar a `/opt/homebrew/bin/supabase` el binario de `supabase_3.1.0_darwin_arm64.tar.gz` del release
   de GitHub (sha256 verificado contra `checksums.txt`). Ya no lo gestiona brew, así que no se actualiza solo.
-- **Docker fuera del PATH:** se agregó `/Applications/Docker.app/Contents/Resources/bin` al PATH en `~/.zshrc`
-  (sin sudo). En esta versión de Docker Desktop la memoria se cambia en Settings > VM resources (quedó en 16 GB).
+- **Docker fuera del PATH:** se agregó `/Applications/Docker.app/Contents/Resources/bin` al PATH (sin sudo; ver más abajo
+  por qué conviene en `~/.zshenv` y no en `~/.zshrc`). En esta versión de Docker Desktop la memoria se cambia en Settings > VM resources (quedó en 16 GB).
 - `libpq` de brew es la 19 (el doc mencionaba la 17): sirve, `pg_dump` solo debe ser >= al servidor.
 - El `git config` global usó el email personal, no el noreply de GitHub: ajustar por repo.
 
@@ -776,3 +776,24 @@ Vigentes acá salvo que el Doc 2 diga otra cosa:
   no haya conexión.
 - **El filtro por radio y las reglas de negocio viven en el backend.**
 - **Seeds mínimos; datos grandes nunca al repo.**
+
+### PATH en shells no interactivos (2026-11-23) **[guazu]**
+- **Síntoma:** `docker`, `flutter`, `dart`, `psql`, `adb`, `emulator` y el `java` de brew "no existen" desde
+  scripts, `make`, un IDE o una herramienta como Claude Code (`docker: command not found`), pero en una terminal
+  abierta a mano sí funcionan. `/usr/bin/java` es solo el atajo de macOS y no el JDK 17.
+- **Causa:** el PATH estaba en `~/.zshrc`, que zsh lee **solo si el shell es interactivo**. `~/.zprofile` lo lee un
+  shell de login. Un proceso lanzado por otro programa no es ninguno de los dos.
+- **Solución:** un `~/.zshenv`, que zsh lee **siempre**, con `JAVA_HOME`, `ANDROID_HOME`, el PATH (Flutter, Java,
+  Android, libpq, Docker, `~/.pub-cache/bin`) y `LANG`. Solo agrega directorios que existen y no duplica entradas, así
+  que se puede releer sin que el PATH crezca. `~/.zshrc` queda solo para lo interactivo. Ejemplo en `tool/zshenv.sh`.
+- Un proceso que ya estaba abierto conserva el PATH viejo: reiniciar la app (o abrir una sesión nueva) para que lo tome.
+  `bash -c` nunca lee `.zshenv`: los scripts con `#!/bin/bash` dependen del PATH que reciban.
+- Se hizo copia de los archivos viejos en `~/.zshrc.bak-guazu` y `~/.zprofile.bak-guazu`.
+
+### Apps en emulador y simulador (2026-11-23) **[guazu]**
+- **Android:** `emulator -avd guazu_pixel -memory 3072` arranca en ~50 s; `make apk-negocio LAN_IP=10.0.2.2` y
+  `adb install -r` (el emulador ve la Mac en `10.0.2.2`). La primera vez puede aparecer "System UI isn't responding":
+  tocar **Wait**.
+- **iOS (simulador):** `flutter build ios --simulator --debug --dart-define=API_URL=http://localhost:8100` (~1 min) y
+  se instala el `Runner.app` de `build/ios/iphonesimulator/`. El simulador ve la Mac en `localhost`.
+- Probado con Negocio en los dos: "Acerca de" muestra el servidor y `Status: connected`.

@@ -100,7 +100,8 @@ brew install --cask android-commandlinetools flutter
 # Flutter: si se prefiere la versión exacta, instalar desde git en el tag 3.50.0
 # (ver "Versionado de Flutter" abajo)
 
-# 2. Variables (agregar a ~/.zshrc)
+# 2. Variables y PATH: van en ~/.zshenv (NO en ~/.zshrc: ese solo lo lee un shell interactivo y
+#    las herramientas, los scripts y make no lo ven). Ejemplo completo en docs/03 ("PATH en shells no interactivos").
 export JAVA_HOME=/opt/homebrew/opt/openjdk@17
 export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
 export PATH="$JAVA_HOME/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:/opt/homebrew/opt/libpq/bin:$PATH"
