@@ -136,7 +136,7 @@ etl-sepa-descargar: ## Baja un zip diario de SEPA: make etl-sepa-descargar SEPA_
 	@mkdir -p $(SEPA_DIR)
 	@f=$(SEPA_DIR)/$$(basename "$(SEPA_URL)"); \
 	for i in 1 2 3 4 5; do \
-		curl -fL --max-time 1800 -A "guazu-etl/0.1" -o "$$f" "$(SEPA_URL)" && unzip -tq "$$f" >/dev/null 2>&1 && { echo "OK: $$f"; exit 0; }; \
+		curl -fL --max-time 3600 --speed-limit 20000 --speed-time 60 -A "guazu-etl/0.1" -o "$$f" "$(SEPA_URL)" && unzip -tq "$$f" >/dev/null 2>&1 && { echo "OK: $$f"; exit 0; }; \
 		echo "intento $$i fallo, reintento..."; \
 	done; echo "no se pudo bajar un zip valido"; exit 1
 

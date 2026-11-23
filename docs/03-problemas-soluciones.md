@@ -361,6 +361,16 @@ El paso a paso para armar la máquina está en `06-setup-entorno.md`.
   almacenero. Una fuente desconocida queda última.
 - **Un constraint nuevo trae su regla** (Doc 2): los de `catalogo_global` tienen nombre explícito para
   poder mapearlos a `reglas.POR_CONSTRAINT` cuando el catálogo tenga endpoints.
+- **Corrida real (2026-11-23).** SEPA del domingo (zip de 324 MB, 14 391 031 filas) en 64 s: 73 739 productos
+  nuevos, 49 432 sin tamaño usable (el campo de SEPA suele traer «1 unidad»), 255 251 EAN de balanza y
+  172 166 filas que no son EAN descartadas, un zip interno vacío saltado. Con la muestra de OFF (118 productos
+  de Argentina y vecinos, de 93 856 filas) el catálogo quedó en 73 857. La segunda corrida de cada fuente dio
+  cero nuevos, cero actualizados y cero conflictos.
+- **La descarga de SEPA se estanca.** Pasó a los 278 MB (18 minutos sin avanzar). El servidor anuncia
+  `Accept-Ranges` pero rechaza reanudar («doesn't seem to support byte ranges»): no usar `-C -`. El target
+  `etl-sepa-descargar` ahora lleva `--speed-limit 20000 --speed-time 60`: si la velocidad cae bajo 20 kB/s
+  un minuto, curl corta y el bucle reintenta desde cero. Matar un `curl` a mano con `pkill -f <archivo>`
+  también mata al `make` padre (su línea de comandos contiene el mismo nombre): matar por PID del `curl`.
 
 ### Casos de prueba de dinero e impuestos **[guazu]**
 - Los casos del cálculo de precio y de la conversión Monotributo ↔ RI se **fijan como datos**
