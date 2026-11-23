@@ -1,0 +1,15 @@
+# token,expansion,contexto: abreviaturas que SOLO se expanden si el nombre trae palabras que
+# las desambiguan. contexto = grupos separados por «+» (se exigen todos); en cada grupo basta
+# una de las palabras separadas por «|». Se comparan sin mayúsculas, acentos ni signos.
+# Si el contexto no está, el token se deja como está (no se inventa).
+ev,extra virgen,aceite|oliva
+ext,extra,aceite|oliva|virg|virgen
+virg,virgen,aceite|oliva|ext|extra
+gira,girasol,aceite|oliv|oliva
+oliv,oliva,aceite|gira|girasol
+caf,café,mol|molido|tostado|instantaneo
+mol,molido,caf|cafe
+me,medio,caf|cafe+mol|molido
+su,suave,caf|cafe+mol|molido
+cep,cepillo,dent|dental|dientes|oral|gum
+dent,dental,cep|cepillo

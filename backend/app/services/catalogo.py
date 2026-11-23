@@ -10,7 +10,7 @@ from uuid import UUID
 
 import asyncpg
 
-from app.services import auditoria
+from app.services import auditoria, calidad
 from app.services.ean import candidatos, normalizar_ean
 from app.services.reglas import ReglaError
 
@@ -113,6 +113,8 @@ async def resolver_conflicto(
             c["ean"],
             campo,
         )
+        # lo que resuelve una persona ya no resta calidad (Doc 7 §6)
+        await calidad.recalcular(conn, ean=c["ean"])
         fila = await conn.fetchrow(
             """
             update conflictos_catalogo

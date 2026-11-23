@@ -1,0 +1,26 @@
+# token,expansion: solo abreviaturas INEQUÍVOCAS (se compara sin mayúsculas ni punto final).
+# Las ambiguas (desc, ch, amb...) NO van acá: ver `ambiguas.txt`.
+p/,para
+c/,con
+s/,sin
+clas,clásico
+clasi,clásico
+clasica,clásica
+clasico,clásico
+aero,aerosol
+amb,ambiente
+lavand,lavanda
+desinf,desinfectante
+desinfec,desinfectante
+desinfect,desinfectante
+desinfectan,desinfectante
+desinfectant,desinfectante
+desod,desodorante
+limp,limpiador
+crem,crema
+antibac,antibacterial
+liq,líquido
+adhes,adhesivo
+gat,gatillo
+antib,antibacterial
+c/lav,con lavandina

@@ -86,13 +86,7 @@ def test_carga_normaliza_y_reporta(tmp_path):
     a, b, c, d = ean(1), ean(2), ean(3), ean(4)
     ruta = csv_off(
         tmp_path,
-        fila(
-            a,
-            "Aceite de Girasol",
-            "Cocinero,Molinos",
-            "900 ml",
-            img="https://img/a.jpg",
-        ),
+        fila(a, "Aceite de Girasol", "Cocinero,Molinos", "900 ml", img="https://img/a.jpg"),
         fila(b, "Fideos", "Lucchetti", "mucho"),
         fila(c, "", "Marca", "1 kg"),  # sin nombre
         fila("7790070411113", "Mal dígito", "M", "1 kg"),  # dígito verificador
@@ -163,11 +157,7 @@ def test_no_pisa_lo_manual_completa_y_marca_conflicto(tmp_path):
     rep = asyncio.run(cargar(ruta))
     assert rep.conflictos_nuevos == 2
     p1 = producto(e1)
-    assert (p1["nombre"], p1["marca"], p1["origen"]) == (
-        "Aceite de girasol",
-        "Cocinero",
-        "manual",
-    )
+    assert (p1["nombre"], p1["marca"], p1["origen"]) == ("Aceite de girasol", "Cocinero", "manual")
     p2 = producto(e2)
     assert (p2["nombre"], float(p2["tamano_valor"]), p2["origen"]) == (
         "Fideos tirabuzón",
@@ -191,11 +181,7 @@ def test_resolver_bloquea_el_campo(tmp_path):
     assert c["campo"] == "tamano"
     db(lambda cn: resolver(cn, str(c["id"]), "b"))
     p = producto(e)
-    assert (
-        float(p["tamano_valor"]),
-        p["tamano_unidad"],
-        list(p["campos_bloqueados"]),
-    ) == (
+    assert (float(p["tamano_valor"]), p["tamano_unidad"], list(p["campos_bloqueados"])) == (
         1.0,
         "kg",
         ["tamano"],
