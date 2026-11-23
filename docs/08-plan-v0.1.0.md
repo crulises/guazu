@@ -143,8 +143,7 @@ anotar el hash en el Doc 9).
   persona carga fuera de estándar se limpia y completa **sin pisar nada cargado**, y se le avisa.
 - **Hecho cuando**: la re-normalización repetida da «Cambiarían: 0» y las cifras de calidad
   se parecen a las de almacenero (Doc 7 §Calidad).
-- Hecho en el issue #6 salvo los **estándares de carga** y sus avisos, que van con el #7 (corrección
-  de la plataforma y sugerencias).
+- Hecho en el issue #6; los **estándares de carga** y sus avisos llegaron con el #7.
 
 **2d: Corrección de la plataforma y sugerencias** (ya mergeado en almacenero, corte 15).
 - Un solo camino de escritura (`services/catalogo.py`: `aplicar` y `crear`) para la corrección
@@ -156,6 +155,9 @@ anotar el hash en el Doc 9).
 - Un producto `manual` o con campos bloqueados **nunca se descarta**.
 - **Hecho cuando**: una corrección de la plataforma o una sugerencia aprobada queda bloqueada contra el
   ETL, auditada, y una segunda corrida del ETL no la pisa.
+- Hecho en el issue #7 por API (ver Doc 7 §Corrección). El **panel visual** (formulario de alta y
+  corrección, cola con globito, fichas) se construye con la interfaz de Negocio y la plataforma, en
+  los hitos que traen pantallas.
 
 **2e (posterior):** CSV curado (`catalogo_curado_v1`, `catalogo_lotes`) y ETL desde el panel
 (`etl_ejecuciones`, worker `web` y `local`): son los cortes 17 y 18 de almacenero, todavía **sin

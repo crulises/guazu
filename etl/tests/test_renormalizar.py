@@ -5,7 +5,7 @@ import asyncio
 import uuid
 
 from etl.comun.catalogo import conectar
-from etl.renormalizar import _COLUMNAS, _clave, nueva_fila, renormalizar
+from etl.renormalizar import _COLUMNAS, _avisar, _clave, nueva_fila, renormalizar
 from etl.tests.test_off_db import db, ean, limpio  # noqa: F401
 
 
@@ -84,3 +84,68 @@ def test_renormalizar_el_catalogo_repetido_no_cambia_nada():
     # una segunda pasada deja la fila exactamente igual
     despues = asyncio.run(correr_y_leer())
     assert _clave(antes) == _clave(despues)
+
+
+# ------------------------------------------------------ estándares y avisos (Doc 10)
+def test_el_nombre_estandar_no_genera_aviso_y_lo_no_humano_tampoco():
+    n = nueva_fila(fila(nombre="Aceite Cocinero Girasol 900 ml Botella"))
+    assert n["_estandares"][0] == "nombre"
+    assert {"marca", "tamano", "presentacion"} <= set(n["_estandares"])
+    ok = nueva_fila(fila(nombre="Aceite Girasol", marca="Cocinero"))
+    assert ok["nombre"] == "Aceite Girasol" and ok["_estandares"] == []
+    sepa = nueva_fila(
+        fila(nombre="ACEITE COCINERO GIRASOL 900 ML", origen="sepa", campos_bloqueados=[])
+    )
+    assert sepa["_estandares"] == [] and sepa["nombre"] != "ACEITE COCINERO GIRASOL 900 ML"
+
+
+def test_estandares_por_tipo_de_defecto():
+    n = nueva_fila(fila(nombre="ACEITE DE GIRASOL"))
+    assert n["nombre"] == "Aceite de Girasol" and n["_estandares"] == ["mayusculas"]
+    assert "abreviaturas" in nueva_fila(fila(nombre="Aceite p/ ensalada"))["_estandares"]
+    assert nueva_fila(fila(nombre="Fideos  Tirabuzón .."))["_estandares"] == ["limpieza"]
+
+
+def test_avisar_deja_el_aviso_al_autor():
+    r = fila(nombre="Aceite Cocinero Girasol 900 ml Botella")
+    n = nueva_fila(r)
+    uid, auth, otro = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+
+    async def correr(c):
+        await c.execute(
+            "insert into usuarios (id, auth_id, alias) values ($1, $2, 'autor-test')", uid, auth
+        )
+        await c.execute(
+            "insert into usuarios (id, auth_id, alias) values ($1, $2, 'admin-test')",
+            otro, uuid.uuid4(),
+        )  # fmt: skip
+        try:
+            await c.execute(
+                "insert into catalogo_global (id, ean, nombre, origen) "
+                "values ($1, $2, $3, 'manual')",
+                r["id"], r["ean"], r["nombre"],
+            )  # fmt: skip
+            await c.execute(
+                "insert into sugerencias_catalogo (producto_id, ean, usuario_id, cambios, estado, "
+                "resuelto_por, resuelto_en, nota_resolucion) "
+                "values ($1, $2, $3, '{\"nombre\": \"x\"}', 'aprobada', "
+                "$4, now(), null)",
+                r["id"], r["ean"], uid, otro,
+            )  # fmt: skip
+            hechos = await _avisar(c, {r["ean"]: (r, n)})
+            avisos = await c.fetch(
+                "select estandares, antes->>'nombre' as a, despues->>'nombre' as d "
+                "from avisos_catalogo where usuario_id = $1",
+                uid,
+            )
+            return hechos, [dict(a) for a in avisos]
+        finally:
+            await c.execute("delete from avisos_catalogo where usuario_id = $1", uid)
+            await c.execute("delete from sugerencias_catalogo where usuario_id = $1", uid)
+            await c.execute("delete from catalogo_global where id = $1", r["id"])
+            await c.execute("delete from usuarios where id = any($1)", [uid, otro])
+
+    hechos, avisos = db(correr)
+    assert hechos == 1
+    assert avisos[0]["a"] == "Aceite Cocinero Girasol 900 ml Botella"
+    assert avisos[0]["d"] == "Aceite Girasol" and "marca" in avisos[0]["estandares"]

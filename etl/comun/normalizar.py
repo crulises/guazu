@@ -439,7 +439,7 @@ def puntuar(
 
 
 # --------------------------------------------------------------------- principal
-def normalizar(e: Entrada) -> Salida:  # noqa: PLR0912, PLR0915: es una receta lineal
+def normalizar(e: Entrada) -> Salida:  # noqa: PLR0912, PLR0915
     motivos: list[str] = []
     original = _GAT_SIN_UNIDAD.sub(r"Gat \1 ml", _limpiar(e.nombre or ""))
     texto = original

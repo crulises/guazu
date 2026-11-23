@@ -8,17 +8,18 @@ nombres crudos de las fuentes), y de nuevo cada vez que sube `NORMALIZADOR_VERSI
 edita un diccionario (`etl/comun/datos/`). Es idempotente: sobre lo ya normalizado no
 cambia nada. Respeta los campos bloqueados, salvo el nombre cuando lo cargó una persona
 fuera del estándar (Doc 10): ahí se limpia el nombre y se completan los campos vacíos con lo
-que traía adentro (el aviso a quien lo cargó llega con el hito de estándares). El dato
+que traía adentro (y se le deja un aviso a quien lo cargó, sin consecuencias). El dato
 crudo de cada fuente está en `producto_fuentes`.
 """
 
 import argparse
 import asyncio
+import json
 from collections import Counter
 from decimal import Decimal
 
 from etl.comun.catalogo import _PEGAJOSOS, conectar, evaluar_fila
-from etl.comun.normalizar import Entrada, normalizar
+from etl.comun.normalizar import Entrada, clave, normalizar
 
 _LOTE = 5000
 
@@ -26,6 +27,36 @@ _COLUMNAS = (
     "id, ean, nombre, marca, tamano_valor, tamano_unidad, imagen_url, presentacion, "
     "pack_cantidad, origen, campos_bloqueados, calidad, estado_calidad, calidad_motivos, "
     "normalizador_version"
+)
+
+# Autor de lo que cargó una persona: la última sugerencia aprobada, o el alta o corrección
+# directa de la plataforma (en la auditoría; la aprobación de una sugerencia no cuenta: la
+# hizo quien la aprobó, no quien la propuso).
+_SQL_AUTORES = """
+select distinct on (ean) ean, usuario_id from (
+    select s.ean, s.usuario_id, s.resuelto_en as t from sugerencias_catalogo s
+     where s.estado = 'aprobada' and s.ean = any ($1::text[])
+    union all
+    select a.entidad_id as ean, a.usuario_id, a.creado_en as t from auditoria a
+     where a.entidad = 'catalogo_producto'
+       and a.accion in ('catalogo_producto.crear', 'catalogo_producto.corregir')
+       and (a.nota is null or a.nota not like 'sugerencia %')
+       and a.entidad_id = any ($1::text[])
+) x order by ean, t desc
+"""
+
+_SQL_AVISO = """
+insert into avisos_catalogo (usuario_id, producto_id, ean, tipo, estandares, antes, despues)
+values ($1, $2, $3, 'nombre_ajustado', $4, $5::jsonb, $6::jsonb)
+"""
+
+_CAMPOS_AVISO = (
+    "nombre",
+    "marca",
+    "tamano_valor",
+    "tamano_unidad",
+    "pack_cantidad",
+    "presentacion",
 )
 
 _SQL_ACTUALIZAR = """
@@ -41,6 +72,36 @@ update catalogo_global p
 def _humano(r) -> bool:
     """El nombre lo puso una persona (alta manual, o lo corrigió y lo bloqueó)."""
     return r["origen"] == "manual" or "nombre" in r["campos_bloqueados"]
+
+
+def estandares_incumplidos(r, s, fila: dict) -> list[str]:
+    """Ids (backend/app/services/estandares.py) de los estándares de carga que el nombre que
+    puso una persona no cumplía, deducidos de qué le cambió el normalizador."""
+    ids: list[str] = []
+    antes, despues = r["nombre"], fila["nombre"]
+    if s.marca and (
+        not r["marca"] or (clave(s.marca) in clave(antes) and clave(s.marca) not in clave(despues))
+    ):
+        ids.append("marca")
+    if (r["tamano_valor"] is None and fila["tamano_valor"] is not None) or (
+        fila["pack_cantidad"] != r["pack_cantidad"]
+    ):
+        ids.append("tamano")
+    if fila["presentacion"] != r["presentacion"]:
+        ids.append("presentacion")
+    palabras_antes = {clave(p) for p in antes.split()}
+    if any(clave(p) not in palabras_antes for p in despues.split()):
+        ids.append("abreviaturas")
+    if antes != despues and [p.casefold() for p in antes.split()] == [
+        p.casefold() for p in despues.split()
+    ]:
+        ids.append("mayusculas")
+    if antes != despues and not ids:
+        ids.append("limpieza")
+    # la marca, el tamaño o el envase que salieron del nombre son el estándar "nombre"
+    if antes != despues and {"marca", "tamano", "presentacion"} & set(ids):
+        ids.insert(0, "nombre")
+    return list(dict.fromkeys(ids))
 
 
 def nueva_fila(r) -> dict:
@@ -72,6 +133,7 @@ def nueva_fila(r) -> dict:
     calidad, estado, motivos, version = evaluar_fila(fila, pegajosos)
     fila.update(calidad=calidad, estado_calidad=estado, calidad_motivos=motivos)
     fila["normalizador_version"] = version
+    fila["_estandares"] = estandares_incumplidos(r, s, fila) if humano else []
     return fila
 
 
@@ -83,9 +145,38 @@ def _clave(f) -> tuple:
     )  # fmt: skip
 
 
+def _json(v):
+    return str(v) if isinstance(v, Decimal) else v
+
+
+async def _avisar(conn, humanos: dict) -> int:
+    """Deja un aviso (con el porqué) a quien cargó lo que el normalizador acaba de ajustar.
+    Es informativo. Sin autor conocido no hay a quién avisarle."""
+    if not humanos:
+        return 0
+    autores = {r["ean"]: r["usuario_id"] for r in await conn.fetch(_SQL_AUTORES, list(humanos))}
+    n = 0
+    for ean, (viejo, nuevo) in humanos.items():
+        if ean not in autores:
+            continue
+        antes = {k: _json(viejo[k]) for k in _CAMPOS_AVISO}
+        despues = {k: _json(nuevo[k]) for k in _CAMPOS_AVISO}
+        await conn.execute(
+            _SQL_AVISO,
+            autores[ean],
+            viejo["id"],
+            ean,
+            nuevo["_estandares"],
+            json.dumps(antes, ensure_ascii=False),
+            json.dumps(despues, ensure_ascii=False),
+        )
+        n += 1
+    return n
+
+
 async def renormalizar(aplicar: bool) -> str:
     lectura, escritura = await conectar(), await conectar()
-    total = cambian = 0
+    total = cambian = avisados = 0
     estados: Counter = Counter()
     try:
         await escritura.execute(
@@ -97,11 +188,14 @@ async def renormalizar(aplicar: bool) -> str:
             cur = await lectura.cursor(f"select {_COLUMNAS} from catalogo_global")
             while lote := await cur.fetch(_LOTE):
                 cambios = []
+                humanos: dict = {}  # ean -> (fila vieja, fila nueva) de lo que cargó una persona
                 for r in lote:
                     total += 1
                     n = nueva_fila(r)
                     estados[n["estado_calidad"]] += 1
                     if _clave(n) != _clave(r):
+                        if n["_estandares"]:
+                            humanos[r["ean"]] = (r, n)
                         cambios.append(
                             (
                                 r["id"], n["nombre"], n["marca"], n["tamano_valor"],
@@ -118,12 +212,14 @@ async def renormalizar(aplicar: bool) -> str:
                         await escritura.copy_records_to_table("renorm", records=cambios)
                         await escritura.execute(_SQL_ACTUALIZAR)
                         await escritura.execute("truncate renorm")
+                        avisados += await _avisar(escritura, humanos)
     finally:
         await lectura.close()
         await escritura.close()
     out = [
         f"Productos: {total}",
         f"{'Actualizados' if aplicar else 'Cambiarían'}: {cambian}",
+        f"Avisos a quien cargó a mano: {avisados if aplicar else '(solo al aplicar)'}",
         "Estados: "
         + ", ".join(f"{e} {estados[e]}" for e in ("completo", "parcial", "dudoso", "descartado")),
     ]
