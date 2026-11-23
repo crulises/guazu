@@ -115,7 +115,7 @@ productos         (por negocio)
 - **Búsqueda por EAN**: `GET /v1/catalogo/ean/{ean}` (cualquier sesión, con tope por minuto
   `catalogo_busquedas_por_minuto`). Acepta 8, 12, 13 y 14 dígitos; el backend normaliza (UPC-A a
   EAN-13, un GTIN-14 con indicador 0 encuentra su EAN-13) y rechaza dígito verificador malo y EAN
-  de balanza con una regla que explica el motivo. La regla es la misma que usa el ETL
+  de balanza con una regla que explica el motivo. Un producto `descartado` no se muestra: responde 404 hasta que alguien lo complete. La regla es la misma que usa el ETL
   (`etl/tests/test_ean_paridad.py` exige que no se separen).
 - El precio nunca sale del catálogo: lo define cada negocio (Doc 2 §Precio).
 - La base propia de esta instancia ocupa ~75 MB de catálogo; está lejos del tope del plan
@@ -161,6 +161,27 @@ vuelta, y un nombre que queda con minúscula inicial al sacar la primera palabra
 que en almacenero para no separar los dos normalizadores; conviene arreglarlo allá primero.
 Cargar de nuevo SEPA u OFF también reescribe esas decenas de filas (el ETL parte del crudo):
 repetir el ETL no cambia nada más.
+
+### Corrección de la plataforma, sugerencias y avisos (hito #7)
+
+Un **solo camino de escritura** (`backend/app/services/catalogo.py`: `aplicar` y `crear`) para la
+corrección directa, el alta simple y la aprobación de una sugerencia: los tres bloquean los campos
+contra el ETL, recalculan la calidad y auditan igual (entidad `catalogo_producto`).
+
+| Endpoint | Capacidad | Qué hace |
+|---|---|---|
+| `GET /v1/admin/catalogo/productos/{ean}` | `catalogo.ver` | Ficha: producto (aunque esté descartado), fuentes, conflictos, sugerencias e historia |
+| `POST /v1/admin/catalogo/productos` | `catalogo.crear` | Alta simple (origen `manual`, todo lo cargado bloqueado) |
+| `PATCH /v1/admin/catalogo/productos/{ean}` | `catalogo.editar` | Corrección directa |
+| `POST /v1/catalogo/sugerencias`, `GET .../mias` | `catalogo.sugerir` | El moderador propone; no toca el catálogo |
+| `GET /v1/admin/catalogo/sugerencias`, `POST .../{id}/aprobar`, `.../rechazar` | `catalogo.sugerencias.resolver` | Cola de la plataforma; rechazar exige nota |
+| `GET /v1/admin/catalogo/resumen` | `admin.acceder` | Los globitos: sugerencias y conflictos pendientes, y conteo por estado de calidad |
+| `GET /v1/ayuda/estandares`, `GET /v1/me/avisos`, `POST /v1/me/avisos/leidos` | cualquier sesión | Estándares de carga (Doc 10) y avisos de ajustes |
+
+Reglas: **nadie resuelve lo propio** (el backend y un check de la base); una sugerencia nueva
+reemplaza a la pendiente del mismo autor y EAN; un producto manual o con campos bloqueados nunca se
+descarta. `make catalogo-renormalizar APLICAR=1` deja un aviso (sin consecuencias, acá no hay karma)
+a quien cargó un nombre fuera de estándar, con los estándares que no se cumplían.
 
 ### Qué cambia para guazu
 

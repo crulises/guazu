@@ -210,6 +210,65 @@ REGLAS: dict[str, Regla] = dict(
             "Dejá lo que hay en el catálogo o corregí el producto a mano.",
         ),
         _r(
+            "sin_cambios",
+            "No hay ningún cambio",
+            "No indicaste ningún dato para cambiar.",
+            "Completá al menos un campo.",
+        ),
+        _r(
+            "ya_es_lo_que_dice",
+            "Eso ya es lo que dice el catálogo",
+            "El producto ya tiene esos valores.",
+            "Cambiá algún dato que sea distinto al actual.",
+        ),
+        _r(
+            "alta_requiere_nombre",
+            "Falta el nombre",
+            "Para dar de alta un producto hace falta el nombre.",
+            "Completá el nombre del producto.",
+        ),
+        _r(
+            "producto_inexistente",
+            "Producto inexistente",
+            "No existe ese producto en el catálogo.",
+            "Revisá el código, o dalo de alta.",
+            404,
+        ),
+        _r(
+            "producto_ya_existe",
+            "El producto ya existe",
+            "Ese código ya está en el catálogo.",
+            "Corregí el producto existente en lugar de darlo de alta.",
+            409,
+        ),
+        _r(
+            "sugerencia_inexistente",
+            "Sugerencia inexistente",
+            "No existe esa sugerencia.",
+            "Actualizá la lista y probá de nuevo.",
+            404,
+        ),
+        _r(
+            "sugerencia_resuelta",
+            "Sugerencia ya resuelta",
+            "Esa sugerencia ya se aprobó, se rechazó o la reemplazó una nueva.",
+            "Actualizá la lista: ya no hace falta hacer nada.",
+            409,
+        ),
+        _r(
+            "rechazo_requiere_nota",
+            "Falta la nota del rechazo",
+            "Para rechazar una sugerencia hay que explicar el motivo.",
+            "Escribí una nota de al menos 3 letras.",
+        ),
+        _r(
+            "no_resolver_lo_propio",
+            "No podés resolver lo tuyo",
+            "Una sugerencia la resuelve otra persona, no quien la propuso.",
+            "Pedile a otra persona de la plataforma que la revise.",
+            403,
+        ),
+        _r(
             "demasiados_intentos",
             "Demasiados intentos",
             "Hiciste demasiados intentos en poco tiempo.",
@@ -236,6 +295,7 @@ REGLAS: dict[str, Regla] = dict(
 # Nombre de constraint o de índice único de la base -> código de regla. Se completa por migración.
 POR_CONSTRAINT: dict[str, str] = {
     "membresias_unica_idx": "membresia_duplicada",
+    "sugerencias_catalogo_propia_check": "no_resolver_lo_propio",
 }
 
 # Fragmento del mensaje de un trigger (RaiseError no trae constraint) -> código de regla.
