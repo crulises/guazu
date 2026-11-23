@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup doctor venv up down migrate seed dueno plataforma test test-backend test-app lint lint-backend lint-app build apk apk-cliente apk-negocio
+.PHONY: help setup doctor venv up down migrate seed dueno plataforma test test-backend test-etl test-app etl-off-muestra etl-off-descargar etl-off etl-sepa-descargar etl-sepa conflictos lint lint-backend lint-app build apk apk-cliente apk-negocio
 
 SHELL := /bin/bash
 VENV := backend/.venv
@@ -79,11 +79,15 @@ $(PY):
 
 venv: $(PY) ## Crea el entorno virtual de Python
 
-test: test-backend test-app ## Todos los tests (backend contra Postgres real y apps)
+test: test-backend test-etl test-app ## Todos los tests (backend y ETL contra Postgres real, y apps)
 
 test-backend: $(PY)
 	@set -a; . ./.env 2>/dev/null || . ./.env.example; set +a; \
 	cd backend && .venv/bin/python -m pytest -q
+
+test-etl: $(PY)
+	@set -a; . ./.env 2>/dev/null || . ./.env.example; set +a; \
+	$(PY) -m pytest etl/tests -q
 
 test-app:
 	@set -e; for d in $(DART_PKGS); do \
@@ -94,12 +98,56 @@ lint: lint-backend lint-app ## ruff y flutter analyze
 
 lint-backend: $(PY)
 	cd backend && .venv/bin/ruff check . && .venv/bin/ruff format --check .
+	$(VENV)/bin/ruff check --config backend/pyproject.toml etl && $(VENV)/bin/ruff format --check --config backend/pyproject.toml etl
 
 lint-app:
 	cd app && flutter analyze
 
 build: ## Build de imágenes
 	docker compose build
+
+# --- ETL del catalogo global (uno por fuente; Doc 7) -------------------------------
+OFF_URL := https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz
+OFF_ARCHIVO ?= etl/data/off.csv.gz
+# Paises de OFF que se cargan: Argentina y sus vecinos (SEPA es la fuente principal para
+# Argentina). OFF_PAISES= (vacio) carga todo el mundo (unos 2,4 GB en la base).
+OFF_PAISES ?= en:argentina,en:paraguay,en:brazil,en:chile,en:uruguay,en:bolivia
+SEPA_DIR ?= etl/data/sepa
+# Dia de SEPA a bajar (lunes a domingo): el id de recurso de cada dia esta en la ficha del
+# dataset https://datos.produccion.gob.ar/dataset/sepa-precios
+SEPA_URL ?=
+
+etl-off-muestra: ## Baja unos 30 MB del principio del volcado de OFF (para probar)
+	@mkdir -p etl/data
+	curl -fL -r 0-30000000 -o etl/data/off-muestra.csv.gz $(OFF_URL)
+	@echo "Listo: etl/data/off-muestra.csv.gz (truncado a proposito; el ETL lo tolera)"
+
+etl-off-descargar: ## Baja el volcado COMPLETO de OFF (unos 1,5 GB). Pedir OK antes de correrlo
+	@mkdir -p etl/data
+	curl -fL -C - -o $(OFF_ARCHIVO) $(OFF_URL)
+
+etl-off: $(PY) ## Carga OFF al catalogo: make etl-off [OFF_ARCHIVO=...] [OFF_PAISES=]
+	@test -f $(OFF_ARCHIVO) || { echo "Falta $(OFF_ARCHIVO): make etl-off-muestra (chico) o make etl-off-descargar (completo)"; exit 1; }
+	@set -a; . ./.env 2>/dev/null || . ./.env.example; set +a; \
+	$(PY) -m etl.off $(OFF_ARCHIVO) --paises "$(OFF_PAISES)"
+
+etl-sepa-descargar: ## Baja un zip diario de SEPA: make etl-sepa-descargar SEPA_URL=<url del recurso> (reintenta)
+	@test -n "$(SEPA_URL)" || { echo "Uso: make etl-sepa-descargar SEPA_URL=<url .zip de datos.produccion.gob.ar>"; exit 1; }
+	@mkdir -p $(SEPA_DIR)
+	@f=$(SEPA_DIR)/$$(basename "$(SEPA_URL)"); \
+	for i in 1 2 3 4 5; do \
+		curl -fL --max-time 3600 --speed-limit 20000 --speed-time 60 -A "guazu-etl/0.1" -o "$$f" "$(SEPA_URL)" && unzip -tq "$$f" >/dev/null 2>&1 && { echo "OK: $$f"; exit 0; }; \
+		echo "intento $$i fallo, reintento..."; \
+	done; echo "no se pudo bajar un zip valido"; exit 1
+
+etl-sepa: $(PY) ## Carga SEPA al catalogo: make etl-sepa SEPA_ARCHIVOS="etl/data/sepa/sepa_domingo.zip"
+	@test -n "$(SEPA_ARCHIVOS)" || { echo "Uso: make etl-sepa SEPA_ARCHIVOS=\"ruta1.zip ruta2.zip\""; exit 1; }
+	@set -a; . ./.env 2>/dev/null || . ./.env.example; set +a; \
+	$(PY) -m etl.sepa $(SEPA_ARCHIVOS)
+
+conflictos: $(PY) ## Lista los conflictos de catalogo pendientes de revision
+	@set -a; . ./.env 2>/dev/null || . ./.env.example; set +a; \
+	$(PY) -m etl.conflictos
 
 # --- apps en un celular ----------------------------------------------------
 # API_TIMEOUT_S=40 make apk-cliente -> espera 40 s por intento (default de la app: 20 s).

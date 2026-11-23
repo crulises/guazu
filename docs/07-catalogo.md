@@ -50,6 +50,41 @@ Google (prohíbe guardar sus datos).
 Se debe mostrar una pantalla **"Datos y licencias"** en las dos apps con estas atribuciones.
 Cuesta una pantalla de texto y no requiere trámite.
 
+## Tamaño medido y límite del plan gratuito (2026-11-23)
+
+Cargado en local con el ETL de guazu (SEPA del domingo más el volcado completo de OFF de
+2026-11-23, 4 928 416 filas, filtrado a Argentina y vecinos):
+
+| Concepto | Valor |
+|----------|-------|
+| Productos en `catalogo_global` | 130 902 (73 740 de SEPA y 57 162 de OFF) |
+| Con tamaño / con marca / con imagen | 50 342 / 115 538 / 42 495 |
+| Tamaño de `catalogo_global` + `producto_fuentes` | 72 MB (base completa con el resto: 93 MB) |
+| Conflictos de tamaño a revisar por la plataforma | 116 |
+| Carga de SEPA (14,4 millones de filas) | 64 s |
+| Carga de OFF (4,9 millones de filas) | 1 min 41 s |
+| Segunda corrida de cada fuente | 0 nuevos, 0 actualizados, 0 conflictos |
+
+Costo por producto medido: **237 bytes** en `catalogo_global` (con sus índices) y **597 bytes** de OFF
+con su dato crudo en `producto_fuentes`. Cuántos productos válidos hay en OFF según el alcance
+(mismo lector y validaciones del ETL):
+
+| Alcance de OFF | Productos | Catálogo estimado con SEPA | Con el plan gratuito de Supabase (500 MB) |
+|----------------|-----------|----------------------------|------------------------------------------|
+| Argentina y vecinos (el actual) | 61 831 | 72 MB (medido) | Entra con holgura |
+| Más Estados Unidos, con dato crudo | 967 446 (905 615 más) | unos 610 MB | **No entra** |
+| Más Estados Unidos, solo `catalogo_global` | 967 446 | unos 290 MB | Entra, pero consume más de la mitad |
+| Todo el mundo | 4 093 915 | 2,5 GB con crudo, 1 GB sin crudo | **No entra** |
+
+- El límite de 500 MB cuenta **toda** la base (auth, tablas de los negocios, índices), no solo el
+  catálogo. Una calidad en la base (columnas del normalizador) suma unos 50 bytes por producto.
+- Recomendación: **no cargar Estados Unidos en bloque**. Un producto de EE. UU. que un negocio argentino
+  vende y que no está en SEPA ni en OFF Argentina se resuelve con la **carga bajo demanda desde la API de
+  OFF** (arriba, §Lo que cambia respecto de almacenero), que no ocupa lugar hasta que alguien escanea
+  ese EAN. Si hiciera falta una cobertura masiva, la opción acotada es guardar solo `catalogo_global`
+  (sin dato crudo) para esos países.
+- Francia (1 028 551) y Alemania (392 839) están en el mismo caso que Estados Unidos.
+
 ## Lo que cambia respecto de almacenero
 
 Acá el catálogo se comparte entre **todos los negocios** (multi-tenant), así que hay dos
