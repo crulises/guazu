@@ -2,6 +2,7 @@
 plataforma; el rol vive en Postgres, no en el JWT: revocar vale en el siguiente pedido."""
 
 import json
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
@@ -14,7 +15,7 @@ from pydantic import BaseModel
 from app.api.auth import CredencialesIn, Sesion, _limitar, _sesion, get_http, pedir
 from app.auth import Usuario
 from app.db import get_pool
-from app.services import auditoria
+from app.services import auditoria, catalogo
 from app.services.permisos import CAPACIDADES_PLATAFORMA, capacidades_de, exigir_plataforma
 from app.services.reglas import ReglaError
 
@@ -176,3 +177,52 @@ async def catalogo_de_capacidades(
 ) -> dict[str, list[str]]:
     """Qué capacidades tiene cada rol de plataforma (para la pantalla de roles del panel)."""
     return {rol: sorted(caps) for rol, caps in CAPACIDADES_PLATAFORMA.items()}
+
+
+class ConflictoOut(BaseModel):
+    id: UUID
+    ean: str
+    nombre: str | None
+    campo: str
+    valor_a: str
+    fuente_a: str
+    valor_b: str
+    fuente_b: str
+    estado: str
+    elegido: str | None
+    resuelto_por: UUID | None
+    resuelto_en: datetime | None
+    created_at: datetime
+
+
+@router.get("/catalogo/conflictos", response_model=list[ConflictoOut])
+async def conflictos_del_catalogo(
+    estado: Literal["pendiente", "resuelto"] | None = "pendiente",
+    ean: str | None = Query(default=None, max_length=14),
+    limite: int = Query(default=50, ge=1, le=200),
+    _: Usuario = Depends(exigir_plataforma("catalogo.ver")),
+    pool: asyncpg.Pool = Depends(get_pool),
+) -> list[ConflictoOut]:
+    """Desacuerdos entre fuentes: `a` es lo que hay en el catálogo, `b` lo que trae la otra."""
+    ean_normal = catalogo.ean_valido(ean) if ean else None
+    filas = await catalogo.listar_conflictos(pool, estado, limite, ean_normal)
+    return [ConflictoOut(**f) for f in filas]
+
+
+class ResolverConflictoIn(BaseModel):
+    elegido: Literal["a", "b"]
+
+
+@router.post("/catalogo/conflictos/{conflicto_id}/resolver", response_model=ConflictoOut)
+async def resolver_conflicto(
+    conflicto_id: UUID,
+    body: ResolverConflictoIn,
+    actor: Usuario = Depends(exigir_plataforma("conflictos.resolver")),
+    pool: asyncpg.Pool = Depends(get_pool),
+) -> ConflictoOut:
+    """`a` deja el catálogo como está, `b` toma el valor de la otra fuente. El campo queda
+    bloqueado: ningún ETL lo vuelve a pisar. Queda auditado."""
+    fila = await catalogo.resolver_conflicto(
+        pool, conflicto_id, body.elegido, actor.id, actor.plataforma_rol or "plataforma"
+    )
+    return ConflictoOut(**fila)

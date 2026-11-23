@@ -108,7 +108,15 @@ productos         (por negocio)
   **privado de ese negocio**. Más adelante podría sugerirse al catálogo global.
 - Los **conflictos** del catálogo global los resuelve el **administrador de la
   plataforma** (vos), no cada negocio. Esto agrega un ámbito de permisos "plataforma"
-  aparte de los de negocio (Doc 2 §Roles y permisos).
+  aparte de los de negocio (Doc 2 §Roles y permisos). Se administran por API:
+  `GET /v1/admin/catalogo/conflictos` (capacidad `catalogo.ver`) y
+  `POST /v1/admin/catalogo/conflictos/{id}/resolver` con `{"elegido": "a"|"b"}` (capacidad
+  `conflictos.resolver`). Resolver bloquea el campo contra el ETL y queda en la auditoría.
+- **Búsqueda por EAN**: `GET /v1/catalogo/ean/{ean}` (cualquier sesión, con tope por minuto
+  `catalogo_busquedas_por_minuto`). Acepta 8, 12, 13 y 14 dígitos; el backend normaliza (UPC-A a
+  EAN-13, un GTIN-14 con indicador 0 encuentra su EAN-13) y rechaza dígito verificador malo y EAN
+  de balanza con una regla que explica el motivo. La regla es la misma que usa el ETL
+  (`etl/tests/test_ean_paridad.py` exige que no se separen).
 - El precio nunca sale del catálogo: lo define cada negocio (Doc 2 §Precio).
 - La base propia de esta instancia ocupa ~75 MB de catálogo; está lejos del tope del plan
   gratuito de Supabase (500 MB, por verificar).
@@ -244,9 +252,7 @@ Decidido (D52): para la v0.1 alcanza con icono de reemplazo más foto propia opc
 
 ## Pendiente de heredar del otro proyecto
 
-- `backend`: normalizar el EAN leído (UPC-A → EAN-13) antes de buscar, y medir qué entrega
-  `mobile_scanner` para UPC-A.
+- Medir qué entrega `mobile_scanner` para UPC-A (el backend ya normaliza al buscar, hito 2b).
 - Carga bajo demanda desde la API de OFF (no implementada allá).
-- Endpoint de administración de conflictos.
 - Locales de OpenStreetMap y sucursales de SEPA: **no aplican** acá (los negocios son
   clientes del servicio, no locales descubiertos).
