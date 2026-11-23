@@ -31,6 +31,8 @@ make etl-off OFF_PAISES=                                 # todo el mundo (2,4 GB
 make conflictos
 ```
 
+Los conflictos también se resuelven por la API de plataforma (`/v1/admin/catalogo/conflictos`, Doc 7).
+
 Cargar es idempotente: repetir una corrida no duplica ni pisa lo resuelto a mano. Los precios de
 SEPA no se cargan: el precio lo define cada negocio.
 

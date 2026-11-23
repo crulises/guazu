@@ -132,6 +132,7 @@ cerrado el 3.
 - Endpoint de búsqueda por EAN con **normalización** (UPC-A a EAN-13) en el backend y
   administración de conflictos para el ámbito de plataforma.
 - **Hecho cuando**: buscar un EAN responde en milisegundos, con 8, 12, 13 y 14 dígitos.
+- Hecho en el issue #5: `GET /v1/catalogo/ean/{ean}` y `/v1/admin/catalogo/conflictos` (ver Doc 7).
 
 **2c: Normalizador y calidad** (copiar de `main` de almacenero, ya mergeados los PR #20, #21 y #22;
 anotar el hash en el Doc 9).

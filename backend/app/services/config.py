@@ -17,6 +17,7 @@ DEFAULTS: dict[str, Any] = {
     "auth_refresh_por_hora_ip": 120,
     "auth_login_por_hora_ip": 30,
     "sesion_pedidos_por_minuto": 120,
+    "catalogo_busquedas_por_minuto": 240,
     # El superadmin existe solo para pruebas y ultimo recurso (D54): apagado por defecto.
     "superadmin_activo": False,
     # Mensajes de error editados desde el panel: {codigo_de_regla: texto} (services/reglas.py).
