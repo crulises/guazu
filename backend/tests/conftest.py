@@ -61,6 +61,9 @@ class Persona:
     def patch(self, ruta, **kw):
         return self.client.patch(ruta, headers=self.headers, **kw)
 
+    def put(self, ruta, **kw):
+        return self.client.put(ruta, headers=self.headers, **kw)
+
     def delete(self, ruta, **kw):
         return self.client.delete(ruta, headers=self.headers, **kw)
 

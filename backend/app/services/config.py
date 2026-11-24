@@ -20,6 +20,10 @@ DEFAULTS: dict[str, Any] = {
     "catalogo_busquedas_por_minuto": 240,
     # El superadmin existe solo para pruebas y ultimo recurso (D54): apagado por defecto.
     "superadmin_activo": False,
+    # Precios (por negocio): margen de respaldo, alicuota de respaldo y redondeo comercial final.
+    "margen_defecto_bp": None,
+    "iva_defecto": "iva_21",
+    "precio_redondeo_centavos": 0,
     # Mensajes de error editados desde el panel: {codigo_de_regla: texto} (services/reglas.py).
     "mensajes_reglas": {},
 }

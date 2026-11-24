@@ -83,12 +83,17 @@ pospuesto vive en `05-futuros-features.md`.
 | D57 | **Los endpoints piden capacidades, no roles**; el catálogo se corrige por **un solo camino de escritura** (corrección directa, alta simple y sugerencia aprobada). Lo cargado por una persona se bloquea contra el ETL y nunca se descarta. | Heredado de almacenero (cortes 15 y 16, mergeados). Doc 2 §Roles, Doc 7 §Calidad. |
 | D58 | **Errores que explican la regla** y **estándares de carga** desde el corte 0 y el 2c. Al agregar un constraint o validación, se agrega su regla. | Heredado. Doc 2 §Panel, Doc 10. |
 | D59 | La pantalla **«Acerca de»** con atribuciones nace en el corte 0 y es accesible sin conexión. | Heredado de almacenero. Doc 7 §Atribuciones. |
+| D60 | **Cálculo del precio con la hipótesis del Doc 2, marcado «sin validar»**, hasta que responda el contador. Si una regla cambia, se cambia un dato (y un caso fijado), no la estructura. | Decidido 2026-11-23. Doc 2 §Cómo quedó implementado. |
+| D61 | Un RI que compra **sin factura A** (monotributista, ticket) **no toma crédito fiscal**: su costo incluye el IVA. Se decide por compra (`es_credito_fiscal`), no por condición. | Decidido 2026-11-23, a validar (`contador.md` §B). |
+| D62 | **Los comprobantes que emita el sistema son internos y opcionales** (los pide quien compra), para trazabilidad mientras se prueba en el negocio familiar. Sin requisitos de homologación hasta que se ofrezca a un público más amplio. Deben poder emitirse para montos chicos y grandes. | Decidido 2026-11-23. Lo legal (ARCA) viene después: ticket «Facturación». |
+| D63 | **Si el IVA se discrimina o no es configurable** por negocio, aparte de la condición fiscal. | Decidido 2026-11-23. No cambia los precios. |
 
 ## Abiertas
 
 | # | Pregunta | Contexto | Estado |
 |---|----------|----------|--------|
 | Q27 | Condición fiscal: validar con contador. | Ver `validar-profesional/contador.md`. Antes de la etapa 0.2. | Abierta |
+| Q28 | Facturación electrónica: qué hace falta para cumplir **Transparencia Fiscal al Consumidor** y si conviene un **webservice propio** de ARCA o un tercero. | Ver el issue #19 «Facturación y comprobantes» y `contador.md` §A. | Abierta |
 | Q12 | Fiado: valores iniciales de límite, recargo y plazo. | Propuestas en Doc 5. | Abierta |
 | Q8 | Productos sin EAN y al peso. | Pospuesto: `revisar/productos-sin-ean-y-al-peso.md`. | Pospuesta |
 | Q18 | Pasarelas. | Investigación en `investigacion-pasarelas.md`; a revisar juntos. | En curso |

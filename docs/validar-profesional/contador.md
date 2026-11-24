@@ -7,6 +7,11 @@ debe poder acompañarlo hasta Responsable Inscripto, y volver. Todo lo que dice
 
 ## A. Alcance del sistema y facturación
 
+> Decidido por ahora (2026-11-23, D62 y D63): los comprobantes del sistema son **internos y
+> opcionales** (trazabilidad en el negocio familiar), sin homologación hasta ofrecerlo a más
+> comercios; el IVA discriminado es configurable. Las preguntas siguen abiertas para cuando se
+> pase a facturación legal.
+
 - [ ] `pendiente` En la v0.1 el sistema **no emite comprobantes** (solo inventario y
   precios). ¿Hay algún problema en que el comercio use el sistema para gestionar
   stock y precios mientras factura por afuera (ej. app de ARCA)?

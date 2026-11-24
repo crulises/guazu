@@ -289,6 +289,85 @@ REGLAS: dict[str, Regla] = dict(
             "Probá de nuevo en un momento.",
             502,
         ),
+        _r(
+            "producto_requiere_nombre",
+            "Falta el nombre",
+            "Ese código no está en el catálogo, así que hace falta el nombre del producto.",
+            "Escribí el nombre (y la marca si la sabés) y volvé a intentar.",
+        ),
+        _r(
+            "producto_negocio_ya_existe",
+            "El producto ya está cargado",
+            "Ese producto ya está en tu negocio.",
+            "Buscalo por el código y editá el que ya existe.",
+            409,
+        ),
+        _r(
+            "producto_negocio_inexistente",
+            "Producto inexistente",
+            "No existe ese producto en tu negocio.",
+            "Revisá el producto, o dalo de alta escaneando el código.",
+            404,
+        ),
+        _r(
+            "categoria_inexistente",
+            "Categoría inexistente",
+            "No existe esa categoría en tu negocio.",
+            "Elegí una de la lista o creala primero.",
+            404,
+        ),
+        _r(
+            "categoria_duplicada",
+            "La categoría ya existe",
+            "Ya tenés una categoría con ese nombre.",
+            "Usá la que ya existe o elegí otro nombre.",
+            409,
+        ),
+        _r(
+            "categoria_con_productos",
+            "La categoría tiene productos",
+            "No se puede borrar una categoría que todavía tiene productos.",
+            "Pasá los productos a otra categoría y volvé a intentar.",
+            409,
+        ),
+        _r(
+            "impuesto_invalido",
+            "Impuesto desconocido",
+            "Ese tipo de impuesto no existe.",
+            "Elegí uno de la lista de alícuotas.",
+        ),
+        _r(
+            "costo_incompleto",
+            "Falta el costo",
+            "Cargá el costo neto o el total de la compra, uno de los dos.",
+            "Con factura A cargá el neto y la alícuota; sin factura A, el total.",
+        ),
+        _r(
+            "condicion_invalida",
+            "Condición fiscal desconocida",
+            "Esa condición fiscal no existe.",
+            "Elegí Monotributo o Responsable Inscripto.",
+        ),
+        _r(
+            "sin_condicion_fiscal",
+            "Falta la condición fiscal",
+            "Tu negocio todavía no tiene condición fiscal cargada.",
+            "Elegí Monotributo o Responsable Inscripto para calcular los precios.",
+            409,
+        ),
+        _r(
+            "fecha_condicion_invalida",
+            "Fecha de condición inválida",
+            "La fecha tiene que ser hoy o anterior, y no anterior a la condición que ya tenías.",
+            "Elegí otra fecha, o dejá la de hoy.",
+        ),
+        _r(
+            "condicion_sin_cambios",
+            "Es la misma condición",
+            "Tu negocio ya está en esa condición fiscal.",
+            "Elegí la otra condición, o editá solo cómo se muestra el IVA.",
+            409,
+        ),
     ]
 )
 
@@ -296,6 +375,8 @@ REGLAS: dict[str, Regla] = dict(
 POR_CONSTRAINT: dict[str, str] = {
     "membresias_unica_idx": "membresia_duplicada",
     "sugerencias_catalogo_propia_check": "no_resolver_lo_propio",
+    "productos_negocio_id_ean_key": "producto_negocio_ya_existe",
+    "categorias_nombre_idx": "categoria_duplicada",
 }
 
 # Fragmento del mensaje de un trigger (RaiseError no trae constraint) -> código de regla.
