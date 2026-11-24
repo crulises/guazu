@@ -183,6 +183,11 @@ mergear** al 2026-11-22. No bloquean la release 0.1.0: la carga se corre desde l
   nada. Los **casos de prueba del cálculo** están fijados.
 - **Antes de este corte**: pasar al contador las preguntas de `contador.md` §B y §C. Si no
   llega la respuesta, el cálculo queda **configurable** y marcado "sin validar".
+- **Cómo se parte (#8)**: 1) backend del cálculo, productos, costos y condición fiscal con los
+  casos fijados (hecho, sin validar, D60 a D63); 2) alta por escaneo con carga bajo demanda desde
+  OFF; 3) pantallas de la app Negocio (necesitan el paquete de escaneo, #11). Las pantallas con
+  los textos guía de cada condición ("Sos monotributista: cargá el costo con IVA incluido") las
+  valida el contador.
 
 ### Corte 4: Stock
 

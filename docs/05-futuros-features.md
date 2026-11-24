@@ -120,7 +120,8 @@ Las fotos se capturan desde la app y los metadatos se guardan aparte (Doc 2
 |---------|--------|-------|
 | Acompañar la **categoría de Monotributo** (A–K) con indicador de facturación acumulada contra el tope y alertas | diseñado | Doc 2 §Precio e impuestos. |
 | Cambio **Monotributo → Responsable Inscripto** con asistente de recálculo de precios desde una fecha | diseñado | |
-| **Facturación electrónica** (ARCA) | idea | Obligatoria si pasa a RI. |
+| **Comprobantes internos** (trazabilidad, opcionales, para cualquier monto) | diseñado | D62. Primero internos; lo legal viene después. |
+| **Facturación electrónica** (ARCA): Transparencia Fiscal al Consumidor, webservice propio o tercero | idea | Obligatoria si pasa a RI. Ticket «Facturación y comprobantes». |
 | Alta de negocios y sucursales desde la app (SaaS) | preparado | Esquema listo; falta UI y facturación del servicio. |
 | **Saldo a favor emitido por un tercero** (ej. municipio) | idea | Revisar con una versión estable y validación legal. La plataforma solo registra y descuenta, sin custodiar dinero. Si no estorba, se deja una tabla de movimientos con `emisor` ya preparada. |
 

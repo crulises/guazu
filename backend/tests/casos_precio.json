@@ -1,0 +1,509 @@
+{
+  "aviso": "SIN VALIDAR: casos fijados con la hipotesis del Doc 2 hasta que responda el contador (docs/validar-profesional/contador.md). Si cambia una regla, se cambia un dato y se agrega un caso.",
+  "reglas": {
+    "monotributo": {
+      "suma_iva_venta": false,
+      "iva_compra_es_credito": false,
+      "discrimina_iva": false
+    },
+    "responsable_inscripto": {
+      "suma_iva_venta": true,
+      "iva_compra_es_credito": true,
+      "discrimina_iva": true
+    }
+  },
+  "calculo": [
+    {
+      "nombre": "mono, costo con IVA incluido, margen 30 %",
+      "condicion": "monotributo",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 10000,
+          "iva_compra_centavos": 2100,
+          "es_credito_fiscal": false
+        },
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 0
+      },
+      "esperado": {
+        "precio_centavos": 15730,
+        "origen": "calculado",
+        "motivo_sin_precio": null,
+        "costo_base_centavos": 12100,
+        "margen_bp": 3000,
+        "iva_venta_bp": 0,
+        "iva_incluido_centavos": null
+      }
+    },
+    {
+      "nombre": "mono con factura A: igual no hay credito, el costo incluye IVA",
+      "condicion": "monotributo",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 10000,
+          "iva_compra_centavos": 2100,
+          "es_credito_fiscal": true
+        },
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 0
+      },
+      "esperado": {
+        "precio_centavos": 15730,
+        "origen": "calculado",
+        "motivo_sin_precio": null,
+        "costo_base_centavos": 12100,
+        "margen_bp": 3000,
+        "iva_venta_bp": 0,
+        "iva_incluido_centavos": null
+      }
+    },
+    {
+      "nombre": "RI con factura A: margen sobre el neto y se suma el IVA de venta",
+      "condicion": "responsable_inscripto",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 10000,
+          "iva_compra_centavos": 2100,
+          "es_credito_fiscal": true
+        },
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 0
+      },
+      "esperado": {
+        "precio_centavos": 15730,
+        "origen": "calculado",
+        "motivo_sin_precio": null,
+        "costo_base_centavos": 10000,
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "iva_incluido_centavos": 2730
+      }
+    },
+    {
+      "nombre": "RI compra a monotributista (factura C): sin credito, margen sobre el total",
+      "condicion": "responsable_inscripto",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 12100,
+          "iva_compra_centavos": 0,
+          "es_credito_fiscal": false
+        },
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 0
+      },
+      "esperado": {
+        "precio_centavos": 19033,
+        "origen": "calculado",
+        "motivo_sin_precio": null,
+        "costo_base_centavos": 12100,
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "iva_incluido_centavos": 3303
+      }
+    },
+    {
+      "nombre": "RI con factura B: IVA no es credito, costo con IVA",
+      "condicion": "responsable_inscripto",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 10000,
+          "iva_compra_centavos": 2100,
+          "es_credito_fiscal": false
+        },
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 0
+      },
+      "esperado": {
+        "precio_centavos": 19033,
+        "origen": "calculado",
+        "motivo_sin_precio": null,
+        "costo_base_centavos": 12100,
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "iva_incluido_centavos": 3303
+      }
+    },
+    {
+      "nombre": "RI alicuota 10,5 %",
+      "condicion": "responsable_inscripto",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 10000,
+          "iva_compra_centavos": 1050,
+          "es_credito_fiscal": true
+        },
+        "margen_bp": 2000,
+        "iva_venta_bp": 1050,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 0
+      },
+      "esperado": {
+        "precio_centavos": 13260,
+        "origen": "calculado",
+        "motivo_sin_precio": null,
+        "costo_base_centavos": 10000,
+        "margen_bp": 2000,
+        "iva_venta_bp": 1050,
+        "iva_incluido_centavos": 1260
+      }
+    },
+    {
+      "nombre": "RI producto exento",
+      "condicion": "responsable_inscripto",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 10000,
+          "iva_compra_centavos": 0,
+          "es_credito_fiscal": true
+        },
+        "margen_bp": 3000,
+        "iva_venta_bp": 0,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 0
+      },
+      "esperado": {
+        "precio_centavos": 13000,
+        "origen": "calculado",
+        "motivo_sin_precio": null,
+        "costo_base_centavos": 10000,
+        "margen_bp": 3000,
+        "iva_venta_bp": 0,
+        "iva_incluido_centavos": null
+      }
+    },
+    {
+      "nombre": "redondeo half-up del margen",
+      "condicion": "monotributo",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 1001,
+          "iva_compra_centavos": 0,
+          "es_credito_fiscal": false
+        },
+        "margen_bp": 5000,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 0
+      },
+      "esperado": {
+        "precio_centavos": 1502,
+        "origen": "calculado",
+        "motivo_sin_precio": null,
+        "costo_base_centavos": 1001,
+        "margen_bp": 5000,
+        "iva_venta_bp": 0,
+        "iva_incluido_centavos": null
+      }
+    },
+    {
+      "nombre": "redondeo half-up por debajo de la mitad",
+      "condicion": "monotributo",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 1005,
+          "iva_compra_centavos": 0,
+          "es_credito_fiscal": false
+        },
+        "margen_bp": 3333,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 0
+      },
+      "esperado": {
+        "precio_centavos": 1340,
+        "origen": "calculado",
+        "motivo_sin_precio": null,
+        "costo_base_centavos": 1005,
+        "margen_bp": 3333,
+        "iva_venta_bp": 0,
+        "iva_incluido_centavos": null
+      }
+    },
+    {
+      "nombre": "redondeo comercial al multiplo de $10 hacia arriba",
+      "condicion": "responsable_inscripto",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 10000,
+          "iva_compra_centavos": 2100,
+          "es_credito_fiscal": true
+        },
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 1000
+      },
+      "esperado": {
+        "precio_centavos": 16000,
+        "origen": "calculado",
+        "motivo_sin_precio": null,
+        "costo_base_centavos": 10000,
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "iva_incluido_centavos": 2777
+      }
+    },
+    {
+      "nombre": "redondeo comercial: la mitad sube",
+      "condicion": "monotributo",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 11923,
+          "iva_compra_centavos": 0,
+          "es_credito_fiscal": false
+        },
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 1000
+      },
+      "esperado": {
+        "precio_centavos": 16000,
+        "origen": "calculado",
+        "motivo_sin_precio": null,
+        "costo_base_centavos": 11923,
+        "margen_bp": 3000,
+        "iva_venta_bp": 0,
+        "iva_incluido_centavos": null
+      }
+    },
+    {
+      "nombre": "redondeo comercial hacia abajo",
+      "condicion": "monotributo",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 11500,
+          "iva_compra_centavos": 0,
+          "es_credito_fiscal": false
+        },
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 1000
+      },
+      "esperado": {
+        "precio_centavos": 15000,
+        "origen": "calculado",
+        "motivo_sin_precio": null,
+        "costo_base_centavos": 11500,
+        "margen_bp": 3000,
+        "iva_venta_bp": 0,
+        "iva_incluido_centavos": null
+      }
+    },
+    {
+      "nombre": "precio manual gana y muestra el margen real (RI)",
+      "condicion": "responsable_inscripto",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 10000,
+          "iva_compra_centavos": 2100,
+          "es_credito_fiscal": true
+        },
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": 20000,
+        "redondeo_centavos": 0
+      },
+      "esperado": {
+        "precio_centavos": 20000,
+        "origen": "manual",
+        "motivo_sin_precio": null,
+        "costo_base_centavos": 10000,
+        "margen_bp": 6529,
+        "iva_venta_bp": 2100,
+        "iva_incluido_centavos": 3471
+      }
+    },
+    {
+      "nombre": "precio manual sin costo (mono)",
+      "condicion": "monotributo",
+      "entrada": {
+        "costo": null,
+        "margen_bp": null,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": 5000,
+        "redondeo_centavos": 0
+      },
+      "esperado": {
+        "precio_centavos": 5000,
+        "origen": "manual",
+        "motivo_sin_precio": null,
+        "costo_base_centavos": null,
+        "margen_bp": null,
+        "iva_venta_bp": 0,
+        "iva_incluido_centavos": null
+      }
+    },
+    {
+      "nombre": "sin costo",
+      "condicion": "monotributo",
+      "entrada": {
+        "costo": null,
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 0
+      },
+      "esperado": {
+        "precio_centavos": null,
+        "origen": null,
+        "motivo_sin_precio": "sin_costo",
+        "costo_base_centavos": null,
+        "margen_bp": 3000,
+        "iva_venta_bp": 0,
+        "iva_incluido_centavos": null
+      }
+    },
+    {
+      "nombre": "sin margen",
+      "condicion": "responsable_inscripto",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 10000,
+          "iva_compra_centavos": 2100,
+          "es_credito_fiscal": true
+        },
+        "margen_bp": null,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 0
+      },
+      "esperado": {
+        "precio_centavos": null,
+        "origen": null,
+        "motivo_sin_precio": "sin_margen",
+        "costo_base_centavos": 10000,
+        "margen_bp": null,
+        "iva_venta_bp": 2100,
+        "iva_incluido_centavos": null
+      }
+    },
+    {
+      "nombre": "costo cero no da precio",
+      "condicion": "monotributo",
+      "entrada": {
+        "costo": {
+          "neto_centavos": 0,
+          "iva_compra_centavos": 0,
+          "es_credito_fiscal": false
+        },
+        "margen_bp": 3000,
+        "iva_venta_bp": 2100,
+        "precio_manual_centavos": null,
+        "redondeo_centavos": 0
+      },
+      "esperado": {
+        "precio_centavos": null,
+        "origen": null,
+        "motivo_sin_precio": "precio_cero",
+        "costo_base_centavos": 0,
+        "margen_bp": 3000,
+        "iva_venta_bp": 0,
+        "iva_incluido_centavos": null
+      }
+    }
+  ],
+  "cambio_de_condicion": [
+    {
+      "nombre": "monotributo a RI, costo con factura A: el margen real no cambia",
+      "de": "monotributo",
+      "a": "responsable_inscripto",
+      "costo": {
+        "neto_centavos": 10000,
+        "iva_compra_centavos": 2100,
+        "es_credito_fiscal": true
+      },
+      "margen_bp": 3000,
+      "iva_venta_bp": 2100,
+      "esperado": {
+        "precio_antes_centavos": 15730,
+        "margen_real_nuevo_bp": 3000,
+        "precio_mantener_precio_centavos": 15730,
+        "precio_mantener_margen_centavos": 15730
+      }
+    },
+    {
+      "nombre": "monotributo a RI, costo con factura B: el margen real baja",
+      "de": "monotributo",
+      "a": "responsable_inscripto",
+      "costo": {
+        "neto_centavos": 10000,
+        "iva_compra_centavos": 2100,
+        "es_credito_fiscal": false
+      },
+      "margen_bp": 3000,
+      "iva_venta_bp": 2100,
+      "esperado": {
+        "precio_antes_centavos": 15730,
+        "margen_real_nuevo_bp": 744,
+        "precio_mantener_precio_centavos": 15730,
+        "precio_mantener_margen_centavos": 19033
+      }
+    },
+    {
+      "nombre": "RI a monotributo, costo con factura A: mismo precio y mismo margen",
+      "de": "responsable_inscripto",
+      "a": "monotributo",
+      "costo": {
+        "neto_centavos": 10000,
+        "iva_compra_centavos": 2100,
+        "es_credito_fiscal": true
+      },
+      "margen_bp": 3000,
+      "iva_venta_bp": 2100,
+      "esperado": {
+        "precio_antes_centavos": 15730,
+        "margen_real_nuevo_bp": 3000,
+        "precio_mantener_precio_centavos": 15730,
+        "precio_mantener_margen_centavos": 15730
+      }
+    },
+    {
+      "nombre": "RI a monotributo, costo sin credito: el IVA de venta deja de salir y el margen real sube",
+      "de": "responsable_inscripto",
+      "a": "monotributo",
+      "costo": {
+        "neto_centavos": 12100,
+        "iva_compra_centavos": 0,
+        "es_credito_fiscal": false
+      },
+      "margen_bp": 3000,
+      "iva_venta_bp": 2100,
+      "esperado": {
+        "precio_antes_centavos": 19033,
+        "margen_real_nuevo_bp": 5730,
+        "precio_mantener_precio_centavos": 19033,
+        "precio_mantener_margen_centavos": 15730
+      }
+    },
+    {
+      "nombre": "monotributo a RI, producto exento",
+      "de": "monotributo",
+      "a": "responsable_inscripto",
+      "costo": {
+        "neto_centavos": 10000,
+        "iva_compra_centavos": 0,
+        "es_credito_fiscal": false
+      },
+      "margen_bp": 3000,
+      "iva_venta_bp": 0,
+      "esperado": {
+        "precio_antes_centavos": 13000,
+        "margen_real_nuevo_bp": 3000,
+        "precio_mantener_precio_centavos": 13000,
+        "precio_mantener_margen_centavos": 13000
+      }
+    }
+  ]
+}

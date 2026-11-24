@@ -129,6 +129,12 @@ def borrar_negocio(negocio_id) -> None:
         async with conexion() as conn, conn.transaction():
             await conn.execute("select set_config('app.membresia_write', 'on', true)")
             await conn.execute("select set_config('app.rol_write', 'on', true)")
+            await conn.execute("select set_config('app.historial_write', 'on', true)")
+            for tabla in (
+                "precios_vigentes", "precios_costos", "productos", "categorias",
+                "negocio_condicion_fiscal",
+            ):  # fmt: skip
+                await conn.execute(f"delete from {tabla} where negocio_id = $1", negocio_id)  # noqa: S608
             await conn.execute("delete from membresias where negocio_id = $1", negocio_id)
             await conn.execute("delete from config where negocio_id = $1", negocio_id)
             await conn.execute("delete from roles where negocio_id = $1", negocio_id)

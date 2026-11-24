@@ -244,6 +244,30 @@ La **condición fiscal** del negocio (`config`) cambia cómo se interpreta:
 - Validar todo esto con un contador antes de la etapa 0.2 (ver
   `validar-profesional/contador.md`).
 
+### Cómo quedó implementado (hito #8, sin validar)
+
+- **Tablas**: `condiciones_fiscales` (parámetros por condición: `suma_iva_venta`,
+  `iva_compra_es_credito`, `discrimina_iva`, `comprobante`, `validada`), `negocio_condicion_fiscal`
+  (vigencia por negocio; se agrega un registro, no se edita), `tipos_impuesto` y
+  `alicuotas_impuesto` (puntos básicos con vigencia).
+- **Costo base**: el neto si la condición descuenta el IVA de compra **y** esa compra dio crédito
+  fiscal (factura A); en cualquier otro caso, neto más IVA. Así una compra de un RI a un
+  proveedor monotributista (Factura C) o con ticket no se trata como crédito fiscal, sin `if` por
+  condición.
+- **IVA discriminado** es un parámetro de **presentación** (comprobante), distinto de `suma_iva_venta`
+  (si el precio lleva el IVA sumado). Se puede cambiar por negocio sin tocar los precios.
+- **Margen**: `producto ?? categoría ?? negocio` (config `margen_defecto_bp`); alícuota igual
+  (`iva_defecto`); redondeo comercial final en `precio_redondeo_centavos` (config por negocio).
+- **`precios_vigentes`** se recalcula en la misma transacción que cualquier cambio que lo afecte.
+  Sin precio calculable, la fila lleva el motivo (`sin_costo`, `sin_margen`, `sin_condicion_fiscal`,
+  `precio_cero`).
+- **Mantener el precio final** al cambiar de condición: se fija el margen del producto que lo
+  reproduce; si el redondeo impide llegar exacto, se fija el precio a mano. Un precio manual nunca se
+  toca. La vista previa corre el mismo camino que la aplicación y revierte.
+- **Permisos**: ver costos y margen exige `stock.ver_costos`; el cajero ve solo el precio.
+- Los casos fijados están en `backend/tests/casos_precio.json` (reglas incluidas) y una prueba
+  exige que las reglas de la base sean las del JSON.
+
 ### Cambio de condición sin recargar nada
 
 El costo se guarda siempre como **neto + IVA de compra + si es crédito fiscal**
